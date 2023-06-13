@@ -1,7 +1,7 @@
 import cors from 'cors';
 import express from 'express';
 import logger from 'jet-logger';
-import goodsController from '@src/controllers/goods.controller'
+import itemsController from '@src/controllers/items.controller'
 import suppliersController from '@src/controllers/suppliers.controller';
 import usersController from '@src/controllers/users.controller';
 
@@ -18,7 +18,7 @@ app.use(express.json());
 app.use(express.static('public'));
 app.use(cors());
 
-app.use('/goods', goodsController);
+app.use('/items', itemsController);
 app.use('/suppliers', suppliersController);
 app.use('/users', usersController);
 
