@@ -69,7 +69,7 @@ controller.post('/login', async (req: Request, res: Response) => {
         const { username, password } = req.body as Users;
 
         const user = await db.query('SELECT * FROM users WHERE username = $1', [username]);
-
+        
         if (user.rows.length === 0) {
             return res.status(401).send({ error: 'Invalid username or password' });
         }
@@ -83,7 +83,7 @@ controller.post('/login', async (req: Request, res: Response) => {
             return res.status(400).send({ errors: 'Invalid username or password' });
         }
 
-        res.status(200).send({ message: 'Login successful' });
+        res.status(200).send(user.rows);
     } catch (error) {
         res.status(500).send({ error: error.message });
     }
