@@ -1,6 +1,6 @@
 import express, { Request, Router, Response } from 'express';
 import db from '@src/db/db';
-import SupplierSchema, {Supplier} from '@src/models/supplier.model';
+import SupplierSchema, { Supplier } from '@src/models/supplier.model';
 import validate from '@src/middlewares/validateRequest';
 
 const controller: Router = express.Router();
@@ -8,19 +8,19 @@ const controller: Router = express.Router();
 controller.get('/', async (req: Request, res: Response) => {
     try {
         const suppliers = await db.query(
-            `SELECT s.id as id_supplier, 
-                s.name as name_supplier, 
-                s.contact_person, s.email, 
-                s.phone, s.address, 
-                s.create_date, 
-                s.country as id_country, 
-                co.name as name_country, 
-                s.city as id_city, 
-                c.name as name_city FROM suppliers s 
-                INNER JOIN cities c on c.id = s.city  
-                INNER JOIN countries co on co.id = s.country`
-          );
-      
+            `SELECT s.id_supplier, 
+            s.name_supplier, 
+            s.contact_person, 
+            s.email, 
+            s.phone, 
+            s.address, 
+            s.create_date, 
+            co.name_country, 
+            c.name_city FROM suppliers s 
+            INNER JOIN cities c on c.id_city = s.id_city  
+            INNER JOIN countries co on co.id_country  = s.id_country `
+        );
+
         res.status(200).send(suppliers.rows)
     } catch (error) {
         res.status(500).send({ error: error.message });
@@ -31,22 +31,21 @@ controller.get('/:id', async (req: Request, res: Response) => {
     try {
         const id = req.params.id;
         const supplier = await db.query(
-            `SELECT s.id as id_supplier, 
-                s.name as name_supplier, 
-                s.contact_person, 
-                s.email, s.phone, 
-                s.address, 
-                s.create_date, 
-                s.country as id_country, 
-                co.name as name_country, 
-                s.city as id_city, 
-                c.name as name_city FROM suppliers s 
-                INNER JOIN cities c on c.id = s.city  
-                INNER JOIN countries co on co.id = s.country 
-                WHERE s.id = $1`,
+            `SELECT s.id_supplier, 
+            s.name_supplier, 
+            s.contact_person, 
+            s.email, 
+            s.phone, 
+            s.address, 
+            s.create_date, 
+            co.name_country, 
+            c.name_city FROM suppliers s 
+            INNER JOIN cities c on c.id_city = s.id_city  
+            INNER JOIN countries co on co.id_country  = s.id_country
+            WHERE s.id_supplier = $1`,
             [id]
-          );
-      
+        );
+
         if (!supplier.rows.length) {
             return res.status(404).send({ error: 'Supplier not found' });
         }
@@ -61,16 +60,16 @@ controller.put('/:id', validate(SupplierSchema), async (req: Request, res: Respo
     try {
         const id = req.params.id;
         const {
-            name,
+            name_supplier,
             contact_person,
             email,
             phone,
             address,
-            country,
-            city,
+            id_country,
+            id_city,
         } = req.body as Supplier;
 
-        const supplier = await db.query('SELECT * FROM suppliers WHERE id = $1', [id]);
+        const supplier = await db.query('SELECT * FROM suppliers WHERE id_supplier = $1', [id]);
 
         if (!supplier.rows.length) {
             return res.status(400).send({ error: 'Supplier not found' });
@@ -78,23 +77,23 @@ controller.put('/:id', validate(SupplierSchema), async (req: Request, res: Respo
 
         const updatedSupplier = await db.query(
             `UPDATE suppliers SET
-            name = $1,
+            name_supplier = $1,
             contact_person = $2,
             email = $3,
             phone = $4,
             address = $5,
-            country = $6,
-            city = $7
-            WHERE id = $8
+            id_country = $6,
+            id_city = $7
+            WHERE id_supplier = $8
             RETURNING *`,
             [
-                name,
+                name_supplier,
                 contact_person,
                 email,
                 phone,
                 address,
-                country,
-                city,
+                id_country,
+                id_city,
                 id,
             ]
         );
@@ -105,33 +104,35 @@ controller.put('/:id', validate(SupplierSchema), async (req: Request, res: Respo
     }
 });
 
+
+
 controller.post('/', validate(SupplierSchema), async (req: Request, res: Response) => {
     try {
         const {
-            name,
+            name_supplier,
             contact_person,
             email,
             phone,
             address,
-            country,
-            city,
+            id_country,
+            id_city,
         } = req.body as Supplier;
 
         const create_date = new Date().toISOString();
 
         const newSupplier = await db.query(
             `INSERT INTO suppliers
-            (name, contact_person, email, phone, address, country, city, create_date)
+            (name_supplier, contact_person, email, phone, address, id_country, id_city, create_date)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             RETURNING *`,
             [
-                name,
+                name_supplier,
                 contact_person,
                 email,
                 phone,
                 address,
-                country,
-                city,
+                id_country,
+                id_city,
                 create_date,
             ]
         );
@@ -147,7 +148,7 @@ controller.delete('/:id', async (req: Request, res: Response) => {
         const id = req.params.id;
 
         const supplier = await db.query(
-            'SELECT * FROM suppliers WHERE id = $1',
+            'SELECT * FROM suppliers WHERE id_supplier = $1',
             [id]
         );
 
@@ -155,7 +156,7 @@ controller.delete('/:id', async (req: Request, res: Response) => {
             return res.status(400).send({ error: 'Supplier not found' });
         }
 
-        await db.query('DELETE FROM suppliers WHERE id = $1', [id]);
+        await db.query('DELETE FROM suppliers WHERE id_supplier = $1', [id]);
 
         res.status(200).send({ message: 'Supplier deleted successfully' });
     } catch (error) {
