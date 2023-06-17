@@ -71,8 +71,7 @@ controller.get("/period", async (req: Request, res: Response) => {
       inner join suppliers_storages sst on sst.id = a.target_id
       inner join items i on i.id = a.item_id
       where to_char(a.date, 'DD.MM.YYYY') between $1 and $2
-      order by a.date
-        `,
+      order by a.date`,
       [start_date, end_date]
     );
     res.status(200).send(actions.rows);
