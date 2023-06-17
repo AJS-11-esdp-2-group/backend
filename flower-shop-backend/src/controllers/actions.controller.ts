@@ -5,7 +5,8 @@ import validate from "@src/middlewares/validateRequest";
 
 const controller: Router = express.Router();
 
-controller.get("/", async (req: Request, res: Response) => {
+// pagination
+controller.get("/pagination", async (req: Request, res: Response) => {
   try {
     const start = req.query.start;
     const end = req.query.end;
@@ -42,5 +43,7 @@ controller.get("/", async (req: Request, res: Response) => {
     res.status(500).send({ error: error.message });
   }
 });
+
+
 
 export default controller;
