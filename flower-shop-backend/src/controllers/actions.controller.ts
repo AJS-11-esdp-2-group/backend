@@ -154,11 +154,10 @@ controller.post(
           const create_date = new Date().toISOString();
           const newActions = await db.query(
             `INSERT INTO actions (operation_type_id, source_id, target_id, item_id, qty, price, date, total_price, user_id)
-            VALUES ($1, 
-              (select id from suppliers_storages where supplier_id = $2), 
-              (select id from suppliers_storages where storage_id = $3), $4, $5, $6, $7, $8, 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 
               (select id from users where token = $9)) RETURNING *`,
-            [ operation_type_id,
+            [
+              operation_type_id,
               source_id,
               target_id,
               item_id,
