@@ -20,7 +20,7 @@ controller.get("/cities", async (req: Request, res: Response) => {
             return res.status(404).send({ error: 'Cities not found' });
         }
 
-        res.status(200).send(cities.rows[0]);
+        res.status(200).send(cities.rows);
     } catch (error) {
         res.status(500).send({ error: error.message });
     }
