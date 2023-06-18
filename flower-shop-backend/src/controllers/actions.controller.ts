@@ -158,8 +158,7 @@ controller.post(
               (select id from suppliers_storages where supplier_id = $2), 
               (select id from suppliers_storages where storage_id = $3), $4, $5, $6, $7, $8, 
               (select id from users where token = $9)) RETURNING *`,
-            [
-              operation_type_id,
+            [ operation_type_id,
               source_id,
               target_id,
               item_id,

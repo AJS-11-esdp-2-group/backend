@@ -13,5 +13,6 @@ const ActionsSchema = object({
   user_id: number()
 });
 
+
 export type Actions = InferType<typeof ActionsSchema>;
 export default ActionsSchema;
