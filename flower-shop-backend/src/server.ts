@@ -5,6 +5,8 @@ import itemController from "@src/controllers/items.controller";
 import suppliersController from "@src/controllers/suppliers.controller";
 import usersController from "@src/controllers/users.controller";
 import actionsController from "@src/controllers/actions.controller";
+import suppliersStoragesController from '@src/controllers/suppliersStorages.controller'
+import storagesController from '@src/controllers/storages.contoller'
 
 const run = async () => {
   app.listen(PORT, () => {
@@ -23,5 +25,8 @@ app.use("/items", itemController);
 app.use("/suppliers", suppliersController);
 app.use("/users", usersController);
 app.use("/supply", actionsController);
+app.use("/suppliers_controllers", suppliersStoragesController);
+app.use("/storages", storagesController);
+
 
 run().catch(logger.err);
