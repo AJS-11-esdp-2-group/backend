@@ -106,7 +106,24 @@ controller.put(
         ]
       );
 
-      res.status(200).send(updatedSupplier.rows);
+      const selectedSupplier = await db.query(
+        `select
+        s.id,
+        s.name_supplier,
+        s.contact_person,
+        s.email,
+        s.phone,
+        s.address,
+        c.name_country,
+        ci.name_city,
+        s.create_date
+        from suppliers s
+        inner join countries c on c.id = s.id_country
+        inner join cities ci on ci.id = s.id_city
+        WHERE s.id = $1`, 
+      [id]);
+
+      res.status(200).send(selectedSupplier.rows);
     } catch (error) {
       res.status(500).send({ error: error.message });
     }
@@ -130,11 +147,11 @@ controller.post(
 
       const create_date = new Date().toISOString();
 
-      const newSupplier = await db.query(
-        `INSERT INTO suppliers
+      const newSupplier: any = await db.query(
+        `INSERT INTO suppliers as s
             (name_supplier, contact_person, email, phone, address, id_country, id_city, create_date)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-            RETURNING *`,
+            RETURNING id`,
         [
           name_supplier,
           contact_person,
@@ -146,8 +163,25 @@ controller.post(
           create_date
         ]
       );
-
-      res.status(200).send(newSupplier.rows);
+        
+      const supplier = await db.query(
+        `select
+        s.id,
+        s.name_supplier,
+        s.contact_person,
+        s.email,
+        s.phone,
+        s.address,
+        c.name_country,
+        ci.name_city,
+        s.create_date
+        from suppliers s
+        inner join countries c on c.id = s.id_country
+        inner join cities ci on ci.id = s.id_city
+        WHERE s.id = $1`, 
+      [newSupplier.rows[0].id]);
+        
+      res.status(200).send(supplier.rows);
     } catch (error) {
       res.status(500).send({ error: error.message });
     }
