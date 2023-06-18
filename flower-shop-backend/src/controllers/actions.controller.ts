@@ -127,10 +127,10 @@ controller.post(
       const token = req.get("Authorization");
       const { operation_type_id, source_id, target_id, item_id, qty, price } =
         req.body as Actions;
-      const user = await db.query("SELECT * FROM users WHERE token = $1", [
+      const user_id = await db.query("SELECT id FROM users WHERE token = $1", [
         token
       ]);
-      if (!user.rows.length) {
+      if (!user_id.rows.length) {
         return res.status(400).send({ message: "User not found" });
       }
       const operation = await db.query(
@@ -153,19 +153,20 @@ controller.post(
           const total = qty * price;
           const create_date = new Date().toISOString();
           const newActions = await db.query(
-            `INSERT INTO actions (operation_type_id, source_id, target_id, item_id, qty, price, date, total_price)
+            `INSERT INTO actions (operation_type_id, source_id, target_id, item_id, qty, price, date, total_price, user_id)
             VALUES ($1, 
               (select id from suppliers_storages where supplier_id = $2), 
-              (select id from suppliers_storages where storage_id = $3), $4, $5, $6, $7, $8) RETURNING *`,
-            [
-              operation_type_id,
+              (select id from suppliers_storages where storage_id = $3), $4, $5, $6, $7, $8, 
+              (select id from users where token = $9)) RETURNING *`,
+            [ operation_type_id,
               source_id,
               target_id,
               item_id,
               qty,
               price,
               create_date,
-              total
+              total,
+              token
             ]
           );
           res.status(200).send(newActions.rows);

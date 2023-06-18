@@ -8,10 +8,11 @@ const ActionsSchema = object({
   qty: number(),
   price: number(),
   total_price: number(),
-  date: date().required('Create date is required'),
+  date: date(),
   update_date: date(),
   user_id: number()
 });
+
 
 export type Actions = InferType<typeof ActionsSchema>;
 export default ActionsSchema;
