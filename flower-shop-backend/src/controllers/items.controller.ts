@@ -2,8 +2,23 @@ import express, { Request, Router, Response } from "express";
 import db from "@src/db/db";
 import ItemsSchema, { Items } from "@src/models/item.model";
 import validate from "@src/middlewares/validateRequest";
+import multer from 'multer';
+import path from 'path';
+import {nanoid} from 'nanoid';
+import {uploadPath} from '../../config';
 
 const controller: Router = express.Router();
+
+const storage = multer.diskStorage({
+    destination: (req, file, cd) => {
+        cd(null, uploadPath);
+    },
+    filename(req, file, cd) {
+        cd(null, nanoid(5) + path.extname(file.originalname));
+    },
+});
+
+const upload = multer({storage});
 
 controller.get("/", async (req: Request, res: Response) => {
   try {
@@ -62,6 +77,7 @@ controller.get("/:id", async (req: Request, res: Response) => {
 
 controller.post(
   "/",
+    upload.single('image'),
   validate(ItemsSchema),
   async (req: Request, res: Response) => {
     try {
