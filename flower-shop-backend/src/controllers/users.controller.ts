@@ -2,6 +2,7 @@ import express, { Request, Router, Response } from 'express';
 import db from '@src/db/db';
 import UserSchema, { Users } from '@src/models/users.model';
 import validate from '@src/middlewares/validateRequest';
+import {nanoid} from 'nanoid';
 
 const controller: Router = express.Router();
 
@@ -71,7 +72,7 @@ controller.post('/login', async (req: Request, res: Response) => {
         const user = await db.query('SELECT * FROM users WHERE username = $1', [username]);
         
         if (user.rows.length === 0) {
-            return res.status(401).send({ error: 'Invalid username or password' });
+            return res.status(401).send({ error: 'Username not found!' });
         }
 
         const passwordMatches = await db.query(
@@ -80,10 +81,44 @@ controller.post('/login', async (req: Request, res: Response) => {
         );
 
         if (!passwordMatches.rows[0].password_matches) {
-            return res.status(400).send({ errors: 'Invalid username or password' });
+            return res.status(400).send({ errors: 'Wrong password' });
         }
 
-        res.status(200).send(user.rows);
+        const token = nanoid();
+        const userSetToken = await db.query(
+            `UPDATE users SET 
+                    token = $1
+                    WHERE username = $2
+                    RETURNING *`,
+            [token, username]
+        );
+
+        const authorizedUser = await db.query(
+            `select
+            u.id,
+            u.username,
+            u.token,
+            r.role,
+            u.email,
+            u.email_verificated,
+            u.phone,
+            u.avatar,
+            u.first_name,
+            u.last_name,
+            u.address,
+            coun.name_country as country,
+            cty.name_city as city,
+            u.create_date,
+            u.last_update_date
+            from users u
+            inner join user_roles r on r.id = u.id_role
+            inner join countries coun on coun.id = u.id_country
+            inner join cities cty on cty.id = u.id_city
+            where u.username = $1`,
+            [username]
+        );
+
+        res.status(200).send(authorizedUser.rows);
     } catch (error) {
         res.status(500).send({ error: error.message });
     }
