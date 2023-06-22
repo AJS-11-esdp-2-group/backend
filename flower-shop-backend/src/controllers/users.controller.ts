@@ -124,7 +124,6 @@ controller.post('/login', async (req: Request, res: Response) => {
     }
 });
 
-const invalidTokens = new Set();
 controller.delete('/logout', async (req, res) => {
     try {
         const token = req.headers.authorization;
@@ -133,8 +132,23 @@ controller.delete('/logout', async (req, res) => {
             return res.status(401).send({ error: 'Unauthorized' });
         }
 
-        invalidTokens.add(token);
+        const user = await db.query(
+            `SELECT * from users WHERE token = $1`, [token]
+        );
+        
+        if(user.rowCount === 0) {
+            return res.status(200).send({message: 'Logout successfull!'})
+        }
 
+        const dropToken = null;
+        const resetToken = await db.query(
+            `UPDATE users SET 
+                    token = $1
+                    WHERE token = $2
+                    RETURNING *`,
+            [dropToken, token]
+        );
+        
         res.status(200).send({ message: 'Logout successful' });
     } catch (error) {
         res.status(500).send({ error: error.message });
