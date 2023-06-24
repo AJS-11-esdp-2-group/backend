@@ -253,4 +253,18 @@ controller.put(
   }
 );
 
+controller.delete("/:id", async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id;
+    const item = await db.query("SELECT * FROM actions WHERE id = $1", [id]);
+    if (!item.rows.length) {
+      return res.status(400).send({ error: "Actions not found" });
+    }
+    await db.query("DELETE FROM actions WHERE id= $1", [id]);
+    res.status(200).send({ message: "Actions deleted successfully" });
+  } catch (error) {
+    res.status(500).send({ error: error.message });
+  }
+});
+
 export default controller;
