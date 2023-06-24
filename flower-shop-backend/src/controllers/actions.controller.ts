@@ -177,4 +177,80 @@ controller.post(
   }
 );
 
+controller.put(
+  "/:id",
+  validate(ActionsSchema),
+  async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id;
+      const token = req.get("Authorization");
+      const { operation_type_id, source_id, target_id, item_id, qty, price } =
+        req.body as Actions;
+      const user_id = await db.query("SELECT id FROM users WHERE token = $1", [
+        token
+      ]);
+      if (!user_id.rows.length) {
+        return res.status(400).send({ message: "User not found" });
+      }
+      console.log(user_id);
+      const id_actions = await db.query("SELECT * FROM actions WHERE id = $1", [
+        id
+      ]);
+      if (!id_actions.rows.length) {
+        return res.status(400).send({ error: "Actions not found" });
+      }
+      const operation = await db.query(
+        "SELECT * FROM operation_type WHERE id = $1",
+        [operation_type_id]
+      );
+      if (!operation.rows.length) {
+        return res.status(400).send({ error: "Operation not found" });
+      }
+      if (qty && price) {
+        if (qty <= 0) {
+          return res.status(400).send({ error: "Qty less than or equal to 0" });
+        }
+        if (price <= 0) {
+          return res
+            .status(400)
+            .send({ error: "Price less than or equal to 0" });
+        }
+        if (qty > 0 && price > 0) {
+          const total = qty * price;
+          const update_date = new Date().toISOString();
+          const newActions = await db.query(
+            `UPDATE actions SET
+            operation_type_id=$1, 
+            source_id = $2, 
+            target_id = $3, 
+            item_id = $4, 
+            qty = $5, 
+            price = $6,
+            total_price= $7,
+            user_id = (SELECT id FROM users WHERE token = $8),
+            update_date = $9
+            WHERE id = $10
+            RETURNING *`,
+            [
+              operation_type_id,
+              source_id,
+              target_id,
+              item_id,
+              qty,
+              price,
+              total,
+              token,
+              update_date,
+              id
+            ]
+          );
+          res.status(200).send(newActions.rows);
+        }
+      }
+    } catch (error) {
+      res.status(500).send({ error: error.message });
+    }
+  }
+);
+
 export default controller;
