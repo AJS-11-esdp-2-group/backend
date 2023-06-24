@@ -8,6 +8,7 @@ import actionsController from "@src/controllers/actions.controller";
 import suppliersStoragesController from '@src/controllers/suppliersStorages.controller'
 import storagesController from '@src/controllers/storages.controller'
 import itemsCategoryController from "@src/controllers/ItemsCategory.controller";
+import itemsSubcategoryController from "@src/controllers/ItemsSubcategory.controller";
 import locationController from "@src/controllers/location.controller";
 
 const run = async () => {
@@ -30,6 +31,7 @@ app.use("/supply", actionsController);
 app.use("/suppliers_controllers", suppliersStoragesController);
 app.use("/storages", storagesController);
 app.use("/items_category", itemsCategoryController);
+app.use("/items_subcategory", itemsSubcategoryController);
 app.use("/location", locationController);
 
 
