@@ -5,23 +5,23 @@ const controller: Router = express.Router();
 
 controller.get("/", async (req: Request, res: Response) => {
     try {
-        const category = await db.query(`select * from items_categories`);
-        res.status(200).send(category.rows);
+        const subcategory = await db.query(`select * from items_subcategories`);
+        res.status(200).send(subcategory.rows);
     } catch (error) {
         res.status(500).send({ error: error.message });
     }
 });
 controller.get("/:id", async (req: Request, res: Response) => {
     try {
-        const categoryId = req.params.id;
+        const subcategoryId = req.params.id;
 
-        const category = await db.query(`SELECT * FROM items_categories WHERE id = $1`, [categoryId]);
+        const subcategory = await db.query(`SELECT * FROM items_subcategories WHERE id = $1`, [subcategoryId]);
 
-        if (category.rows.length === 0) {
-            return res.status(404).send({ error: 'Category not found' });
+        if (subcategory.rows.length === 0) {
+            return res.status(404).send({ error: 'Subcategory not found' });
         }
 
-        res.status(200).send(category.rows[0]);
+        res.status(200).send(subcategory.rows[0]);
     } catch (error) {
         res.status(500).send({ error: error.message });
     }
