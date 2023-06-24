@@ -157,6 +157,7 @@ controller.put(
           item_name,
           item_description,
           id_category,
+          id_subcategory,
           image_small,
           image_large,
           id_user,
