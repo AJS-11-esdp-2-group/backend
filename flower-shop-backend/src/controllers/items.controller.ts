@@ -52,14 +52,13 @@ controller.get("/:id", async (req: Request, res: Response) => {
     s.id,
     s.item_name,
     s.item_description,
-    ic.category_name,
-    ic.category_name_description,
+    s.id_category,
     s.image_small,
     s.image_large,
     s.create_date,
     u.username
     from items s
-    inner join items_categories ic on ic.id = s.id_category
+
     inner join users u on u.id = s.id_user
     where s.id = $1`,
       [id]
