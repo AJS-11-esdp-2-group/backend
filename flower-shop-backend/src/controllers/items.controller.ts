@@ -28,13 +28,14 @@ controller.get("/", async (req: Request, res: Response) => {
         s.item_name,
         s.item_description,
         ic.category_name,
-        ic.category_name_description,
+        isc.subcategory_name,
         s.image_small,
         s.image_large,
         s.create_date,
         u.username
         from items s
         inner join items_categories ic on ic.id = s.id_category
+        inner join items_subcategories isc ON isc.id = s.id_subcategory
         inner join users u on u.id = s.id_user`);
 
     res.status(200).send(item.rows);
@@ -53,6 +54,7 @@ controller.get("/:id", async (req: Request, res: Response) => {
     s.item_name,
     s.item_description,
     s.id_category,
+    s.id_subcategory,
     s.image_small,
     s.image_large,
     s.create_date,
@@ -84,6 +86,7 @@ controller.post(
         item_name,
         item_description,
         id_category,
+        id_subcategory,
         image_small,
         image_large,
         id_user
@@ -94,14 +97,16 @@ controller.post(
                 item_name,
                 item_description,
                 id_category,
+                id_subcategory,
                 image_small, 
                 image_large, 
                 create_date,
-                id_user ) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+                id_user ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
         [
           item_name,
           item_description,
           id_category,
+          id_subcategory,
           image_small,
           image_large,
           create_date,
@@ -125,6 +130,7 @@ controller.put(
         item_name,
         item_description,
         id_category,
+        id_subcategory,
         image_small,
         image_large,
         id_user
@@ -141,10 +147,11 @@ controller.put(
                 item_name = $1, 
                 item_description = $2, 
                 id_category = $3, 
-                image_small = $4, 
-                image_large = $5, 
-                id_user = $6
-                WHERE id = $7
+                id_subcategory = $4,
+                image_small = $5, 
+                image_large = $6, 
+                id_user = $7
+                WHERE id = $8
                 RETURNING *`,
         [
           item_name,
