@@ -10,6 +10,8 @@ import storagesController from '@src/controllers/storages.controller'
 import itemsCategoryController from "@src/controllers/ItemsCategory.controller";
 import itemsSubcategoryController from "@src/controllers/ItemsSubcategory.controller";
 import locationController from "@src/controllers/location.controller";
+import bouquetController from "@src/controllers/bouquets.controller";
+import compositionBouquetsController from "@src/controllers/compositionBouquets.controller";
 
 const run = async () => {
   app.listen(PORT, () => {
@@ -33,6 +35,8 @@ app.use("/storages", storagesController);
 app.use("/items_category", itemsCategoryController);
 app.use("/items_subcategory", itemsSubcategoryController);
 app.use("/location", locationController);
+app.use("/bouquets", bouquetController);
+app.use("/compositionBouquets", compositionBouquetsController);
 
 
 run().catch(logger.err);
