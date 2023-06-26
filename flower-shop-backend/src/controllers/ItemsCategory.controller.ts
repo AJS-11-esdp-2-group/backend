@@ -48,21 +48,21 @@ controller.post('/', validate(CategorySchema), async (req: Request, res: Respons
 
 controller.delete('/:id', async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
-      const deletedCategory = await db.query(`
+        const { id } = req.params;
+        const deletedCategory = await db.query(`
         DELETE FROM items_categories
         WHERE id = $1
         RETURNING *
       `, [id]);
-  
-      if (deletedCategory.rows.length === 0) {
-        return res.status(404).send('Category is not found');
-      }
-  
-      res.status(200).send('Category is successfully deleted');
+
+        if (deletedCategory.rows.length === 0) {
+            return res.status(404).send('Category is not found');
+        }
+
+        res.status(200).send('Category is successfully deleted');
     } catch (error) {
-      res.status(500).send({ error: error.message });
+        res.status(500).send({ error: error.message });
     }
-  });
+});
 
 export default controller;
