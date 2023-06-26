@@ -181,7 +181,6 @@ controller.delete("/:id", async (req: Request, res: Response) => {
     if (!item.rows.length) {
       return res.status(400).send({ error: "Item not found" });
     }
-
     await db.query("DELETE FROM items WHERE id= $1", [id]);
 
     res.status(200).send({ message: "Item deleted successfully" });
