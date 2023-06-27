@@ -8,12 +8,10 @@ controller.get("/", async (req: Request, res: Response) => {
     const suppliers_storages = await db.query(
       `select
       st.id,
-      CASE
-      WHEN st.supplier_id is not null THEN (select name_supplier from suppliers where id = st.supplier_id)
-      WHEN st.storage_id is not null THEN (select storage from storages where id = st.storage_id)
-      END name
+      (select name_supplier from suppliers where id = st.supplier_id) as name
       from suppliers_storages st
-        `
+      where st.storage_id is null
+      `
     );
     res.status(200).send(suppliers_storages.rows);
   } catch (error) {
