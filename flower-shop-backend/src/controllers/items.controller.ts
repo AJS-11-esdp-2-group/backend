@@ -181,6 +181,13 @@ controller.delete("/:id", async (req: Request, res: Response) => {
     if (!item.rows.length) {
       return res.status(400).send({ error: "Item not found" });
     }
+
+    const isInUse = await db.query("SELECT * FROM actions WHERE item_id = $1", [id]);
+
+    if (isInUse.rows.length) {
+      return res.status(400).send({ error: "Item is referenced in 'Actions' table and cannot be deleted" });
+    }
+
     await db.query("DELETE FROM items WHERE id= $1", [id]);
 
     res.status(200).send({ message: "Item deleted successfully" });
