@@ -13,6 +13,7 @@ import locationController from "@src/controllers/location.controller";
 import bouquetController from "@src/controllers/bouquets.controller";
 import itemsUnderCategoryController from "./controllers/itemsUnderSubcategories.controllers"
 import compositionBouquetsController from "@src/controllers/compositionBouquets.controller";
+import bouquetsImageController from "./controllers/bouquetsImage.controller";
 
 const run = async () => {
   app.listen(PORT, () => {
@@ -39,6 +40,7 @@ app.use("/items_under_subcategory", itemsUnderCategoryController);
 app.use("/location", locationController);
 app.use("/bouquets", bouquetController);
 app.use("/compositionBouquets", compositionBouquetsController);
+app.use("/bouquets_images", bouquetsImageController);
 
 
 run().catch(logger.err);
