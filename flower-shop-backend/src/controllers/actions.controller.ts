@@ -213,7 +213,6 @@ controller.put(
       if (!user_id.rows.length) {
         return res.status(400).send({ message: "User not found" });
       }
-      console.log(user_id);
       const id_actions = await db.query("SELECT * FROM actions WHERE id = $1", [
         id
       ]);
