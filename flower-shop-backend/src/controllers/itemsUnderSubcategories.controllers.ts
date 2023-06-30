@@ -9,20 +9,41 @@ const controller: Router = express.Router();
 
 controller.get("/", async (req: Request, res: Response) => {
   try {
-    const subcategory = await db.query(
-      `
-      select
-      ius.id,
-      ius.under_subcategory_name,
-      ius.under_subcategory_description,
-      its.subcategory_name,
-      ic.category_name
-      from items_under_subcategories ius
-      inner join items_subcategories its on its.id = ius.id_subcategories
-      inner join items_categories ic on ic.id = its.id_category
-      order by ius.id`
-    );
-    res.status(200).send(subcategory.rows);
+    const id_subcategory = req.query.id_subcategory;
+    if (id_subcategory) {
+      const subcategory = await db.query(
+        `select
+        ius.id,
+        ius.under_subcategory_name,
+        ius.under_subcategory_description,
+        its.subcategory_name,
+        ic.category_name
+        from items_under_subcategories ius
+        inner join items_subcategories its on its.id = ius.id_subcategories
+        inner join items_categories ic on ic.id = its.id_category
+        WHERE ius.id_subcategories = $1`,
+        [id_subcategory]
+      );
+      if (subcategory.rows.length === 0) {
+        return res.status(404).send({ error: "Subcategory not found" });
+      }
+      res.status(200).send(subcategory.rows);
+    } else {
+      const subcategory = await db.query(
+        `
+        select
+        ius.id,
+        ius.under_subcategory_name,
+        ius.under_subcategory_description,
+        its.subcategory_name,
+        ic.category_name
+        from items_under_subcategories ius
+        inner join items_subcategories its on its.id = ius.id_subcategories
+        inner join items_categories ic on ic.id = its.id_category
+        order by ius.id`
+      );
+      res.status(200).send(subcategory.rows);
+    }
   } catch (error) {
     res.status(500).send({ error: error.message });
   }
