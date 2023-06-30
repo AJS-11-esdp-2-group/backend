@@ -1,46 +1,58 @@
 import express, { Request, Router, Response } from "express";
-import db from "@src/db/db";
-import SubcategorySchema, { Subcategory } from "@src/models/subcategory.models";
-import validate from "@src/middlewares/validateRequest";
+import db from "../db/db";
+import UnderSubcategorySchema, {
+  UnderSubcategory
+} from "../models/itemsUnderSubcategories.models";
+import validate from "../middlewares/validateRequest";
 
 const controller: Router = express.Router();
 
 controller.get("/", async (req: Request, res: Response) => {
   try {
     const subcategory = await db.query(
-      `SELECT
-        sc.id,
-        sc.subcategory_name,
-        sc.subcategory_description,
-        c.category_name
-        FROM items_subcategories sc
-        inner join items_categories c on c.id = sc.id_category
-        order by sc.id`
+      `
+select
+ius.id,
+ius.under_subcategory_name,
+ius.under_subcategory_description,
+its.subcategory_name,
+its.subcategory_description,
+ic.category_name,
+ic.category_description
+from items_under_subcategories ius
+inner join items_subcategories its on its.id = ius.id_subcategories
+inner join items_categories ic on ic.id = its.id_category
+order by ius.id`
     );
     res.status(200).send(subcategory.rows);
   } catch (error) {
     res.status(500).send({ error: error.message });
   }
 });
+
 controller.get("/:id", async (req: Request, res: Response) => {
   try {
     const subcategoryId = req.params.id;
 
     const subcategory = await db.query(
-      `SELECT
-            sc.subcategory_name,
-            sc.subcategory_description,
-            c.category_name
-            FROM items_subcategories sc
-            inner join items_categories c on c.id = sc.id_category
-            WHERE sc.id = $1`,
+      `select
+      ius.id,
+      ius.under_subcategory_name,
+      ius.under_subcategory_description,
+      its.subcategory_name,
+      its.subcategory_description,
+      ic.category_name,
+      ic.category_description
+      from items_under_subcategories ius
+      inner join items_subcategories its on its.id = ius.id_subcategories
+      inner join items_categories ic on ic.id = its.id_category
+            WHERE ius.id = $1`,
       [subcategoryId]
     );
 
     if (subcategory.rows.length === 0) {
       return res.status(404).send({ error: "Subcategory not found" });
     }
-
     res.status(200).send(subcategory.rows[0]);
   } catch (error) {
     res.status(500).send({ error: error.message });
@@ -49,7 +61,7 @@ controller.get("/:id", async (req: Request, res: Response) => {
 
 controller.post(
   "/",
-  validate(SubcategorySchema),
+  validate(UnderSubcategorySchema),
   async (req: Request, res: Response) => {
     try {
       const token = req.get("Authorization");
@@ -59,24 +71,31 @@ controller.post(
       if (!user_id.rows.length) {
         return res.status(400).send({ message: "User not found" });
       }
-      const { subcategory_name, subcategory_description, id_category } =
-        req.body as Subcategory;
-      const category = await db.query(
-        "select*from items_categories WHERE id = $1",
-        [id_category]
+      const {
+        under_subcategory_name,
+        under_subcategory_description,
+        id_subcategories
+      } = req.body as UnderSubcategory;
+      const subcategory = await db.query(
+        "select*from items_subcategories WHERE id = $1",
+        [id_subcategories]
       );
-      if (!category.rows.length) {
+      if (!subcategory.rows.length) {
         return res
           .status(400)
-          .send({ message: "Categories are not in the database" });
+          .send({ message: "Subcategories are not in the database" });
       }
       const newSubcategory = await db.query(
         `
-      INSERT INTO items_subcategories (subcategory_name, subcategory_description, id_category)
+      INSERT INTO items_under_subcategories (under_subcategory_name, under_subcategory_description, id_subcategories)
       VALUES ($1, $2, $3)
       RETURNING *
     `,
-        [subcategory_name, subcategory_description, id_category]
+        [
+          under_subcategory_name,
+          under_subcategory_description,
+          id_subcategories
+        ]
       );
 
       res.status(200).send(newSubcategory.rows[0]);
@@ -96,35 +115,14 @@ controller.delete("/:id", async (req: Request, res: Response) => {
     if (!user_id.rows.length) {
       return res.status(400).send({ message: "User not found" });
     }
-    const sub_category = await db.query(
-      "select*from items_subcategories WHERE id = $1",
-      [id]
-    );
-    if (!sub_category.rows.length) {
-      return res
-        .status(400)
-        .send({ message: "Subcategories are not in the database" });
-    }
-    const dependent_subcategory = await db.query(
-      "select*from items_under_subcategories WHERE id_subcategories = $1",
-      [id]
-    );
-    if (dependent_subcategory.rows.length) {
-      return res.status(400).send({
-        message:
-          "Subcategories have associated records in the table items_under_subcategories"
-      });
-    }
-
     const deletedSubcategory = await db.query(
       `
-        DELETE FROM items_subcategories
+        DELETE FROM items_under_subcategories
         WHERE id = $1
         RETURNING *
       `,
       [id]
     );
-
     if (deletedSubcategory.rows.length === 0) {
       return res.status(404).send("Subcategory is not found");
     }
@@ -136,13 +134,16 @@ controller.delete("/:id", async (req: Request, res: Response) => {
 
 controller.put(
   "/:id",
-  validate(SubcategorySchema),
+  validate(UnderSubcategorySchema),
   async (req: Request, res: Response) => {
     try {
       const id = req.params.id;
       const token = req.get("Authorization");
-      const { subcategory_name, subcategory_description, id_category } =
-        req.body as Subcategory;
+      const {
+        under_subcategory_name,
+        under_subcategory_description,
+        id_subcategories
+      } = req.body as UnderSubcategory;
       const user_id = await db.query("SELECT id FROM users WHERE token = $1", [
         token
       ]);
@@ -150,25 +151,30 @@ controller.put(
         return res.status(400).send({ message: "User not found" });
       }
       const sub_category = await db.query(
-        "select*from items_categories where id = $1",
-        [id_category]
+        "select*from items_subcategories where id = $1",
+        [id_subcategories]
       );
       if (!sub_category.rows.length) {
-        return res.status(400).send({ error: "Category not found" });
+        return res.status(400).send({ error: "SubCategory not found" });
       }
-      const updateCategory = await db.query(
-        `UPDATE items_subcategories SET
-        subcategory_name=$1, 
-        subcategory_description = $2,
-              id_category=$3
+      const updateUnderCategory = await db.query(
+        `UPDATE items_under_subcategories SET
+        under_subcategory_name=$1,
+        under_subcategory_description = $2,
+        id_subcategories=$3
               WHERE id = $4
               RETURNING *`,
-        [subcategory_name, subcategory_description, id_category, id]
+        [
+          under_subcategory_name,
+          under_subcategory_description,
+          id_subcategories,
+          id
+        ]
       );
-      if (updateCategory.rows.length === 0) {
-        return res.status(404).send("Subcategory is not found");
+      if (updateUnderCategory.rows.length === 0) {
+        return res.status(404).send("UnderSubcategory is not found");
       }
-      res.status(200).send(updateCategory.rows);
+      res.status(200).send(updateUnderCategory.rows);
     } catch (error) {
       res.status(500).send({ error: error.message });
     }
