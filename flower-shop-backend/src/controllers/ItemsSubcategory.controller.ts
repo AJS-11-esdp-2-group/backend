@@ -27,13 +27,14 @@ controller.get("/:id", async (req: Request, res: Response) => {
     const subcategoryId = req.params.id;
 
     const subcategory = await db.query(
-      `SELECT
+      `     SELECT
+            sc.id,
             sc.subcategory_name,
             sc.subcategory_description,
             c.category_name
             FROM items_subcategories sc
             inner join items_categories c on c.id = sc.id_category
-            WHERE sc.id = $1`,
+            WHERE sc.id_category = $1`,
       [subcategoryId]
     );
 
@@ -41,7 +42,7 @@ controller.get("/:id", async (req: Request, res: Response) => {
       return res.status(404).send({ error: "Subcategory not found" });
     }
 
-    res.status(200).send(subcategory.rows[0]);
+    res.status(200).send(subcategory.rows);
   } catch (error) {
     res.status(500).send({ error: error.message });
   }

@@ -11,18 +11,16 @@ controller.get("/", async (req: Request, res: Response) => {
   try {
     const subcategory = await db.query(
       `
-select
-ius.id,
-ius.under_subcategory_name,
-ius.under_subcategory_description,
-its.subcategory_name,
-its.subcategory_description,
-ic.category_name,
-ic.category_description
-from items_under_subcategories ius
-inner join items_subcategories its on its.id = ius.id_subcategories
-inner join items_categories ic on ic.id = its.id_category
-order by ius.id`
+      select
+      ius.id,
+      ius.under_subcategory_name,
+      ius.under_subcategory_description,
+      its.subcategory_name,
+      ic.category_name
+      from items_under_subcategories ius
+      inner join items_subcategories its on its.id = ius.id_subcategories
+      inner join items_categories ic on ic.id = its.id_category
+      order by ius.id`
     );
     res.status(200).send(subcategory.rows);
   } catch (error) {
@@ -40,20 +38,18 @@ controller.get("/:id", async (req: Request, res: Response) => {
       ius.under_subcategory_name,
       ius.under_subcategory_description,
       its.subcategory_name,
-      its.subcategory_description,
-      ic.category_name,
-      ic.category_description
+      ic.category_name
       from items_under_subcategories ius
       inner join items_subcategories its on its.id = ius.id_subcategories
       inner join items_categories ic on ic.id = its.id_category
-            WHERE ius.id = $1`,
+      WHERE ius.id_subcategories = $1`,
       [subcategoryId]
     );
 
     if (subcategory.rows.length === 0) {
       return res.status(404).send({ error: "Subcategory not found" });
     }
-    res.status(200).send(subcategory.rows[0]);
+    res.status(200).send(subcategory.rows);
   } catch (error) {
     res.status(500).send({ error: error.message });
   }
