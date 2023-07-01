@@ -19,7 +19,7 @@ controller.get('/:id', async (req: Request, res: Response) => {
           c.qty
         FROM
           composition_of_bouquets c
-          JOIN items i ON i.id = c.id_bouquet
+          JOIN items i ON i.id = c.id_item
         WHERE c.id_bouquet = $1;
       `, [id]);
   
@@ -49,11 +49,11 @@ controller.post('/', validate(CompositionBouquetsSchema), async (req: Request, r
           c.qty
         FROM
           composition_of_bouquets c
-          JOIN items i ON i.id = c.id_bouquet
+          JOIN items i ON i.id = c.id_item
         WHERE c.id = $1;
-      `, [(<any>newComposition.rows[0]).id]);
+      `, [(newComposition.rows[0]).id]);
 
-        res.status(200).send(composition.rows[0]);
+        res.status(200).send(composition.rows);
     } catch (error) {
         res.status(500).send({ error: error.message });
     }
@@ -86,12 +86,12 @@ controller.put('/:id', validate(CompositionBouquetsSchema), async (req: Request,
           c.qty
         FROM
           composition_of_bouquets c
-          JOIN items i ON i.id = c.id_bouquet
+          JOIN items i ON i.id = c.id_item
         WHERE c.id = $1;
-      `, [(<any>updatedComposition.rows[0]).id]
+      `, [(updatedComposition.rows[0]).id]
       );
   
-      res.status(200).send(newComposition.rows[0]);
+      res.status(200).send(newComposition.rows);
     } catch (error) {
       res.status(500).send({ error: error.message });
     }
