@@ -21,6 +21,18 @@ const storage = multer.diskStorage({
 
 const upload = multer({storage});
 
+controller.get('/', async (req: Request, res: Response) => {
+    try {
+      const images = await db.query(`
+        SELECT * FROM bouquets_images
+      `);
+  
+      res.status(200).send(images.rows);
+    } catch (error) {
+      res.status(500).send({ error: error.message });
+    }
+});
+
 controller.post("/", upload.single('image'), validate(BouquetsImagesSchema), async(req: Request, res: Response) => {
     const imageData = {...req.body};
     
@@ -31,7 +43,7 @@ controller.post("/", upload.single('image'), validate(BouquetsImagesSchema), asy
             RETURNING *
         `, [parseInt(imageData.id_bouquet), req.file?.filename]);
 
-        res.status(201).send(bouquetImage.rows[0]);
+        res.status(201).send(bouquetImage.rows);
     } catch (error) {
        res.status(500).send({error:error.message}); 
     }
