@@ -26,9 +26,8 @@ controller.get('/:id', async (req: Request, res: Response) => {
         SELECT DISTINCT ON (b.id)
             b.id, b.bouquet_name, b.bouquet_description, b.author, b.id_category, i.image
         FROM bouquets b
-        JOIN bouquets_images i USING(id)
+        LEFT OUTER JOIN bouquets_images i ON b.id = i.id_bouquet
         WHERE b.id = $1
-        ORDER BY b.id
       `, [req.params.id]);
 
       res.status(200).send(bouquets.rows);
