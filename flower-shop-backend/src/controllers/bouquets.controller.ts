@@ -8,12 +8,12 @@ const controller: Router = express.Router();
 controller.get('/', async (req: Request, res: Response) => {
     try {
         const bouquets = await db.query(`
-          SELECT DISTINCT ON (b.id)
-              b.id, b.bouquet_name, b.bouquet_description, b.author, b.id_category, i.image
-          FROM bouquets b
-          JOIN bouquets_images i USING(id)
-          ORDER BY b.id
+        SELECT DISTINCT ON (b.id)
+          b.id, b.bouquet_name, b.bouquet_description, b.author, b.id_category, i.image
+        FROM bouquets b
+        LEFT OUTER JOIN bouquets_images i ON b.id = i.id_bouquet
         `);
+        
         res.status(200).send(bouquets.rows);
     } catch (error) {
         res.status(500).send({ error: error.message });
@@ -26,9 +26,8 @@ controller.get('/:id', async (req: Request, res: Response) => {
         SELECT DISTINCT ON (b.id)
             b.id, b.bouquet_name, b.bouquet_description, b.author, b.id_category, i.image
         FROM bouquets b
-        JOIN bouquets_images i USING(id)
+        LEFT OUTER JOIN bouquets_images i ON b.id = i.id_bouquet
         WHERE b.id = $1
-        ORDER BY b.id
       `, [req.params.id]);
 
       res.status(200).send(bouquets.rows);
