@@ -195,6 +195,15 @@ controller.delete("/:id", async (req: Request, res: Response) => {
   try {
     const id = req.params.id;
 
+    const supplierInActions = await db.query(
+      "SELECT * FROM actions WHERE source_id IN (SELECT id FROM suppliers_storages WHERE supplier_id = $1) OR target_id IN (SELECT id FROM storages WHERE id IN (SELECT storage_id FROM suppliers_storages WHERE supplier_id = $1))",
+      [id]
+    );
+
+    if (supplierInActions.rows.length > 0) {
+      return res.status(400).send({ error: "Supplier is associated with actions and cannot be deleted" });
+    }
+
     const supplier = await db.query("SELECT * FROM suppliers WHERE id = $1", [
       id
     ]);
