@@ -129,7 +129,7 @@ controller.put(
                 id_subcategory = $4,
                 id_under_subcategory = $5,
                 id_user = $6
-                WHERE id = $
+                WHERE id = $7
                 RETURNING *`,
         [
           item_name,
