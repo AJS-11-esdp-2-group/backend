@@ -14,6 +14,7 @@ import bouquetController from "@src/controllers/bouquets.controller";
 import itemsUnderCategoryController from "./controllers/itemsUnderSubcategories.controllers"
 import recipesController from "@src/controllers/recipes.controller";
 import bouquetsImageController from "./controllers/bouquetsImage.controller";
+import itemsPricesControllers from '@src/controllers/itemsPrices.controller';
 
 const run = async () => {
   app.listen(PORT, () => {
@@ -41,6 +42,6 @@ app.use("/location", locationController);
 app.use("/bouquets", bouquetController);
 app.use("/recipes", recipesController);
 app.use("/bouquets_images", bouquetsImageController);
-
+app.use("/items_prices", itemsPricesControllers);
 
 run().catch(logger.err);
