@@ -4,7 +4,6 @@ import SubcategorySchema, { Subcategory } from "@src/models/subcategory.models";
 import validate from "@src/middlewares/validateRequest";
 
 const controller: Router = express.Router();
-
 controller.get("/", async (req: Request, res: Response) => {
   try {
     const category = req.query.id_category;
@@ -20,9 +19,6 @@ controller.get("/", async (req: Request, res: Response) => {
         WHERE sc.id_category = $1`,
         [category]
       );
-      if (subcategory.rows.length === 0) {
-        return res.status(404).send({ error: "Category not found" });
-      }
       res.status(200).send(subcategory.rows);
     } else {
       const subcategory = await db.query(
