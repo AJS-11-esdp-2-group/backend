@@ -8,7 +8,8 @@ const controller: Router = express.Router();
 controller.get('/', async (req: Request, res: Response) => {
     try {
         const bouquets = await db.query(`
-          select distinct on(b.id) b.id, b.bouquet_name, b.bouquet_description, i.image, b.author, sum(qty*price) 
+          select distinct on(b.id) 
+          b.id, b.bouquet_name, b.bouquet_description, i.image, b.author, sum(qty*price) 
           from bouquets b 
           left join (
             SELECT  r.id, r.id_bouquet, r.id_item, r.qty, ipf.price
@@ -35,7 +36,8 @@ controller.get('/', async (req: Request, res: Response) => {
 controller.get('/:id', async (req: Request, res: Response) => {
   try {
       const bouquets = await db.query(`
-        select distinct on(b.id) b.id, b.bouquet_name, b.bouquet_description, i.image, b.author, sum(qty*price) 
+        select distinct on(b.id) 
+        b.id, b.bouquet_name, b.bouquet_description, i.image, b.author, sum(qty*price) 
         from bouquets b 
         left join (
           SELECT  r.id, r.id_bouquet, r.id_item, r.qty, ipf.price
