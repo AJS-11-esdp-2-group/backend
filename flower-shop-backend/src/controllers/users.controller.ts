@@ -68,7 +68,7 @@ controller.post(
           date
         ]
       );
-      res.status(200).send(newUser.rows);
+      res.status(200).send(newUser.rows[0]);
     } catch (error) {
       res.status(500).send({ error: error.message });
     }
@@ -128,7 +128,7 @@ controller.post("/login", async (req: Request, res: Response) => {
             where u.username = $1`,
       [username]
     );
-    res.status(200).send(authorizedUser.rows);
+    res.status(200).send(authorizedUser.rows[0]);
   } catch (error) {
     res.status(500).send({ error: error.message });
   }
