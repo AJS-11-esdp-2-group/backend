@@ -24,9 +24,6 @@ controller.get("/", async (req: Request, res: Response) => {
         WHERE ius.id_subcategories = $1`,
         [id_subcategory]
       );
-      if (subcategory.rows.length === 0) {
-        return res.status(404).send({ error: "Subcategory not found" });
-      }
       res.status(200).send(subcategory.rows);
     } else {
       const subcategory = await db.query(
@@ -66,7 +63,6 @@ controller.get("/:id", async (req: Request, res: Response) => {
       WHERE ius.id_subcategories = $1`,
       [subcategoryId]
     );
-
     if (subcategory.rows.length === 0) {
       return res.status(404).send({ error: "Subcategory not found" });
     }
