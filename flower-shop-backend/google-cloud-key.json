@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "rugged-night-391816",
+  "private_key_id": "47abf79670e63f44b9a48863001ae3d6e821254e",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCxDNWflBcT0ElM\nosoSN9Le+jwyiQh2O4ZYfc/UddOS1W48WJr4fsievVCojouJcBOW8uew9+azvuGZ\nJWoxY8kmtpGdkBu2E2fWM+vjOfRqpp/nM7hN48BlqVAAM3mFTtE0Yh6JO+r/Xj4t\n70DR2NzayrAkuPIRlTWNnkL6GcNDva+6DFUkDPl4cfvLJAzrpAy4HHWukGtScEZq\nZSf1KCfIL/l/qzehpickEuGvyYMleGTTEhYgG3m9VY4rCCkVMmaGQbk7iSeQbULk\n61eoBmwVOlJQWV90tAIjMVdwqRbrAcfu+onHoqiVJpHid234oPr44whQytL9ipHy\nySYpPMd1AgMBAAECggEAHBEszF9tnnZ70upQ870QcMi6l52hpHH175FXoRa3Xk+i\nFMRMd5hMYDMi1kBtXnGl/rKt3XVvMo96tAx6XoSzHq/9OufdfL/BdkjvhtYT09Rr\nr6Xt/GsJKmns2htO6GiA7GJMSkp1YTD6Knit40ETF0bf0EfWwsgkn+QMOhmwxXbJ\nJJvqvdMBtA8qqIx5bpeVje/z4zVnRSXCWZvAWS/+0weslf0aAv0mSsTw2DAU+GOx\nSDTA0Ed9uhDoWQwnCrznKIgwmU5lN8ucHQMHhh8CBEucz/pgvO4qRMPsuLzHv6oG\nsNFfYHli47DBEtnjAPTlPIJy/YBjZ/cpAYV4MEzvAQKBgQDVnsAu7FUJp2HZFBdk\ne8yY4Tk61+Z2VS+X8lW1Wj5R+PtS4SGPHc3C0TLupDKwYpmybG+fHYPV02w9E48V\nld5xfihpo5tiuer7+qTq1kwyDFpgfTguYZJWB35R0yLZgwsvIzo9KYCeUXaZnW2P\nij0N/xtI+dvNBKW5RdYizlNR2wKBgQDULMharP9wblj43aRDoVxYGxazRRaDDcDC\ndb3a9bbHirVy5g14JsHShMybl6gb4hCo6JatjjcZGWLzA8fsj0N7uzxv4pksPene\nW5PZaCuSAKdoeKtLC+4+CkPwJSzdS+2BAU1OBI24EcpmC5om1mjEVVHg+8dQJfjt\n4fKkdh7U7wKBgDtpWoPyYLg9oD4Sk2rz73Q5d4RBFaylhoYY9PNqNNjxiVyElqPK\nIzbineq3Kg3abmqsM+Mp/0eR9JGMBgh31RT1hGHVCdtMX+lSzVku3qQwwVYCnYRw\nyJU6okw5j4C1LIAgqQrnpwjhGT4iBZ2dUdu5rqn+K756Y2kC3kpx3cRvAoGAL7Kl\nk+TiQ9c6vy+sdtu2k8P7NW/poKqd09l+RdQJNBCVu+/FxWYJGpdqG+xbCXGnxyEK\nhpe7ATR4zyLhdee7BvzPmGN7hbuhcLBrq2tEqDznZZADCgrzkxThswHYdSNVkDPH\nuitB5MhzFL+09tgqk0CO+KIBa54tuOSblKdNRRcCgYA+Z7QW2T/GPjFvlt9/u+Gs\nXy0Cvx+w9NrBjbaRCfKU+O3ioRSHdpPxDHdTc6B/N1GHg9e0V/1KhoFQF7aLTpKN\nXhw8iUtY3p7rpNKuUdLNdu3XT0YmCOGQJFmyS40vy28WgIB1LoRuHUIm27xEZ76z\nYPqA9oaabXjNXElSJITPxA==\n-----END PRIVATE KEY-----\n",
+  "client_email": "flower-shop@rugged-night-391816.iam.gserviceaccount.com",
+  "client_id": "114442954393724612334",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/flower-shop%40rugged-night-391816.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

@@ -1,25 +1,15 @@
 import express, { Request, Router, Response } from "express";
+import processFile from "../middlewares/upload";
+import {format} from "util";
+import {Storage} from "@google-cloud/storage";
 import db from "@src/db/db";
-import validate from "@src/middlewares/validateRequest";
-import multer from 'multer';
-import path from 'path';
-import {nanoid} from 'nanoid';
 import {uploadPath} from '../../config';
-import BouquetsImagesSchema from "@src/models/bouquetsImages.models";
 import fs from "fs";
 
 const controller: Router = express.Router();
 
-const storage = multer.diskStorage({
-    destination: (req, file, cd) => {
-        cd(null, uploadPath);
-    },
-    filename(req, file, cd) {
-        cd(null, nanoid() + path.extname(file.originalname));
-    },
-});
-
-const upload = multer({storage});
+const storage = new Storage({ keyFilename: "google-cloud-key.json" });
+const bucket = storage.bucket("flower_shop_1");
 
 controller.get('/', async (req: Request, res: Response) => {
     try {
@@ -33,19 +23,55 @@ controller.get('/', async (req: Request, res: Response) => {
     }
 });
 
-controller.post("/", upload.single('image'), validate(BouquetsImagesSchema), async(req: Request, res: Response) => {
-    const imageData = {...req.body};
-    
-    try {
-        const bouquetImage = await db.query(`
-            INSERT INTO bouquets_images (id_bouquet, image) 
-            VALUES ($1, $2)
-            RETURNING *
-        `, [parseInt(imageData.id_bouquet), req.file?.filename]);
+controller.post("/", async(req: Request, res: Response) => {
+    await processFile(req, res);
+    const fileOriginalName = req.file?.originalname;
 
-        res.status(201).send(bouquetImage.rows);
-    } catch (error) {
-       res.status(500).send({error:error.message}); 
+    try {
+        const imageData = {...req.body};
+        if(!imageData.id_bouquet) return res.status(400).send({message: 'Id of bouquet is required'});
+
+        if (!req.file) {
+          return res.status(400).send({ message: "Please upload a file!" });
+        }
+    
+        const blob = bucket.file(req.file.originalname);
+        const blobStream = blob.createWriteStream({
+          resumable: false,
+        });
+        
+        const fileOriginalname = req.file.originalname;
+
+        blobStream.on("error", (err) => {
+          res.status(500).send({ message: err.message });
+        });
+    
+        blobStream.on("finish", async () => {
+          const publicUrl = format(
+            `https://storage.googleapis.com/${bucket.name}/${blob.name}`
+          );
+          
+          try {
+            const bouquetImage = await db.query(`
+                INSERT INTO bouquets_images (id_bouquet, image) 
+                VALUES ($1, $2)
+                RETURNING *
+            `, [parseInt(imageData.id_bouquet), publicUrl]);
+            } catch (error) {
+            res.status(500).send({error:error.message}); 
+            }
+    
+          res.status(200).send({
+            message: "Uploaded the file successfully: " + fileOriginalname,
+            url: publicUrl,
+          });
+        });
+    
+        blobStream.end(req.file.buffer);
+    } catch (err) {
+        res.status(500).send({
+          message: `Could not upload the file: ${fileOriginalName}. ${err}`,
+        });
     }
 });
 

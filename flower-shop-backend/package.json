@@ -10,6 +10,15 @@
     "test": "nodemon --config ./spec/nodemon.json",
     "test:no-reloading": "npx ts-node --files -r tsconfig-paths/register ./spec"
   },
+  "keywords": [
+    "nodejs",
+    "upload",
+    "file",
+    "google cloud storage",
+    "rest api"
+  ],
+  "author": "flower_shop",
+  "license": "ISC",
   "nodemonConfig": {
     "watch": [
       "src"
@@ -27,6 +36,7 @@
     "node": ">=8.10.0"
   },
   "dependencies": {
+    "@google-cloud/storage": "^6.11.0",
     "@types/cors": "^2.8.13",
     "@types/multer": "^1.4.7",
     "@types/nanoid": "^3.0.0",
