@@ -1,7 +1,7 @@
-import express, { Request, Router, Response } from "express";
-import db from "@src/db/db";
-import ActionsSchema, { Actions } from "@src/models/actions.models";
-import validate from "@src/middlewares/validateRequest";
+import express, { Request, Router, Response } from 'express';
+import db from '@src/db/db';
+import ActionsSchema, { Actions, ItemForActions } from '@src/models/actions.models';
+import validate from '@src/middlewares/validateRequest';
 
 const controller: Router = express.Router();
 
@@ -120,78 +120,76 @@ controller.get("/supplier", async (req: Request, res: Response) => {
 });
 
 controller.post(
-  "/",
+  '/',
   validate(ActionsSchema),
   async (req: Request, res: Response) => {
     try {
-      const token = req.get("Authorization");
-      const { operation_type_id, source_id, target_id, item_id, qty, price } =
-        req.body as Actions;
-      const user_id = await db.query("SELECT id FROM users WHERE token = $1", [
+      const token = req.get('Authorization');
+      const { operation_type_id, source_id, target_id, invoice_number, items } = req.body as Actions;
+      const user = await db.query('SELECT id FROM users WHERE token = $1', [
         token
       ]);
-      if (!user_id.rows.length) {
-        return res.status(400).send({ message: "User not found" });
+      if (!user.rows.length) {
+        return res.status(400).send({ message: 'User not found' });
       }
       const operation = await db.query(
-        "SELECT * FROM operation_type WHERE id = $1",
+        'SELECT * FROM operation_type WHERE id = $1',
         [operation_type_id]
       );
       if (!operation.rows.length) {
-        return res.status(400).send({ error: "Operation not found" });
+        return res.status(400).send({ error: 'Operation not found' });
       }
 
       const source = await db.query(
-        "select * from suppliers_storages where supplier_id = $1",
+        'SELECT * FROM suppliers WHERE id = $1',
         [source_id]
       );
       if (!source.rows.length) {
-        return res.status(400).send({ error: "Sourse not found" });
+        return res.status(400).send({ error: 'Source not found' });
       }
 
       const target = await db.query(
-        "select * from suppliers_storages where storage_id = $1",
+        'SELECT * FROM storages WHERE id = $1',
         [target_id]
       );
-
       if (!target.rows.length) {
-        return res.status(400).send({ error: "Target not found" });
+        return res.status(400).send({ error: 'Target not found' });
       }
 
-      if (qty && price) {
+      const create_date = new Date().toISOString();
+      const actions = [];
+
+      for (const item of items) {
+        const { item_id, qty, price } = item;
         if (qty <= 0) {
-          return res.status(400).send({ error: "Qty less than or equal to 0" });
+          return res.status(400).send({ error: 'Qty less than or equal to 0' });
         }
         if (price <= 0) {
-          return res
-            .status(400)
-            .send({ error: "Price less than or equal to 0" });
+          return res.status(400).send({ error: 'Price less than or equal to 0' });
         }
-        if (qty > 0 && price > 0) {
-          const total = qty * price;
-          const create_date = new Date().toISOString();
-          const newActions = await db.query(
-            `INSERT INTO actions (operation_type_id, 
-              source_id, 
-              target_id, 
-              item_id, qty, price, date, total_price, user_id)
-            VALUES ($1, (select id from suppliers_storages where supplier_id = $2), (select id from suppliers_storages where storage_id = $3), $4, $5, $6, $7, $8, 
-              (select id from users where token = $9)) RETURNING *`,
-            [
-              operation_type_id,
-              source_id,
-              target_id,
-              item_id,
-              qty,
-              price,
-              create_date,
-              total,
-              token
-            ]
-          );
-          res.status(200).send(newActions.rows);
-        }
+        const total = qty * price;
+        const newAction = db.query(
+          `INSERT INTO actions 
+          (operation_type_id, source_id, target_id, item_id, qty, price, date, total_price, user_id, invoice_number)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8,  (select id from users where token = $9), $10) RETURNING *`,
+          [
+            operation_type_id,
+            source_id,
+            target_id,
+            item_id,
+            qty,
+            price,
+            create_date,
+            total,
+            token,
+            invoice_number
+          ]
+        );
+        actions.push(newAction);
       }
+
+      const insertedActions = await Promise.all(actions);
+      res.status(200).send(insertedActions.map((result) => result.rows[0]));
     } catch (error) {
       res.status(500).send({ error: error.message });
     }
@@ -206,7 +204,7 @@ controller.put(
       const id = req.params.id;
       const token = req.get("Authorization");
       const { operation_type_id, source_id, target_id, item_id, qty, price } =
-        req.body as Actions;
+        req.body;
       const user_id = await db.query("SELECT id FROM users WHERE token = $1", [
         token
       ]);
@@ -284,6 +282,61 @@ controller.delete("/:id", async (req: Request, res: Response) => {
     res.status(200).send({ message: "Actions deleted successfully" });
   } catch (error) {
     res.status(500).send({ error: error.message });
+  }
+});
+controller.get('/invoices', async (req: Request, res: Response) => {
+  try {
+    const invoiceNumbers = await db.query(
+      `select
+      invoice_number,
+      COUNT(*) AS total_items,
+      suppliers.name_supplier AS supplier_name,
+      s.storage AS storage_name,
+      SUM(total_price) AS total_sum,
+      MAX(date) AS date
+    from actions
+    left join storages ss ON actions.target_id = ss.id
+     left join suppliers ON actions.source_id = suppliers.id
+    left JOIN storages s ON actions.target_id= s.id
+    group by invoice_number, suppliers.name_supplier, s.storage
+    order by date desc`,
+    );
+
+
+    res.status(200).send(invoiceNumbers.rows);
+  } catch (error) {
+    res.status(500).send({ error: error.message });
+  }
+});
+
+controller.get('/invoices/:invoice_number', async (req: Request, res: Response) => {
+  try {
+    const invoiceNumber = req.params.invoice_number;
+
+    const query = `
+    select
+    i.item_name,
+            s1.name_supplier AS source_supplier_name,
+            st2.storage AS target_storage_name,
+            a.qty,
+            a.price,
+            a.total_price
+          from actions a
+          join items i ON a.item_id = i.id
+          left JOIN suppliers_storages ss1 ON a.source_id = ss1.id
+          left JOIN suppliers_storages ss2 ON a.target_id = ss2.id
+          left JOIN suppliers s1 ON ss1.supplier_id = s1.id
+          left JOIN suppliers s2 ON ss2.supplier_id = s2.id
+          left JOIN storages st1 ON ss1.storage_id = st1.id
+          left JOIN storages st2 ON ss2.storage_id = st2.id
+          where a.invoice_number = $1;
+    `;
+
+    const result = await db.query(query, [invoiceNumber]);
+
+    res.status(200).json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
