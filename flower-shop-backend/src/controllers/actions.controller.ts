@@ -288,7 +288,7 @@ controller.get('/invoices', async (req: Request, res: Response) => {
   try {
     const invoiceNumbers = await db.query(
       `select
-      invoice_number,
+      invoice_number as id,
       COUNT(*) AS total_items,
       suppliers.name_supplier AS supplier_name,
       s.storage AS storage_name,
@@ -299,7 +299,7 @@ controller.get('/invoices', async (req: Request, res: Response) => {
      left join suppliers ON actions.source_id = suppliers.id
     left JOIN storages s ON actions.target_id= s.id
     group by invoice_number, suppliers.name_supplier, s.storage
-    order by date desc`,
+    order by id`,
     );
 
 
