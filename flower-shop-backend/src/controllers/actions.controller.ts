@@ -315,21 +315,23 @@ controller.get('/invoices/:invoice_number', async (req: Request, res: Response) 
 
     const query = `
     select
-    i.item_name,
-            s1.name_supplier AS source_supplier_name,
-            st2.storage AS target_storage_name,
-            a.qty,
-            a.price,
-            a.total_price
-          from actions a
-          join items i ON a.item_id = i.id
-          left JOIN suppliers_storages ss1 ON a.source_id = ss1.id
-          left JOIN suppliers_storages ss2 ON a.target_id = ss2.id
-          left JOIN suppliers s1 ON ss1.supplier_id = s1.id
-          left JOIN suppliers s2 ON ss2.supplier_id = s2.id
-          left JOIN storages st1 ON ss1.storage_id = st1.id
-          left JOIN storages st2 ON ss2.storage_id = st2.id
-          where a.invoice_number = $1;
+  i.item_name,
+  s1.name_supplier AS source_supplier_name,
+  s2.storage AS target_storage_name,
+  a.qty,
+  a.price,
+  a.total_price,
+  a.date,
+  u.first_name,
+  u.last_name
+from
+  actions a
+  join items i ON a.item_id = i.id
+  left join suppliers s1 on a.source_id = s1.id
+  left join storages s2 on a.target_id = s2.id
+  left join users u on a.user_id = u.id
+where
+  a.invoice_number = $1;
     `;
 
     const result = await db.query(query, [invoiceNumber]);
