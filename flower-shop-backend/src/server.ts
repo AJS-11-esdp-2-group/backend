@@ -15,6 +15,7 @@ import itemsUnderCategoryController from "./controllers/itemsUnderSubcategories.
 import recipesController from "@src/controllers/recipes.controller";
 import bouquetsImageController from "./controllers/bouquetsImage.controller";
 import itemsPricesControllers from '@src/controllers/itemsPrices.controller';
+import saleControllers from '@src/controllers/sale.controller'
 
 const run = async () => {
   app.listen(PORT, () => {
@@ -43,5 +44,6 @@ app.use("/bouquets", bouquetController);
 app.use("/recipes", recipesController);
 app.use("/bouquets_images", bouquetsImageController);
 app.use("/items_prices", itemsPricesControllers);
+app.use("/sales", saleControllers);
 
 run().catch(logger.err);
