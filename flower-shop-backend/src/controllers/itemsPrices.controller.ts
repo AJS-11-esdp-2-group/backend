@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import validate from '@src/middlewares/validateRequest';
-import ItemsPricesSchema from '@src/models/itemsPrices';
+import validate from '../middlewares/validateRequest';
+import ItemsPricesSchema from '../models/itemsPrices';
 import express, { Request, Router, Response } from 'express';
-import db from '@src/db/db';
+import db from '../db/db';
 
 const controller: Router = express.Router();
 
