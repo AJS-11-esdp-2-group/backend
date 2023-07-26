@@ -1,6 +1,6 @@
 import express, { Request, Router, Response } from 'express';
 import db from '../db/db';
-import BouquetSchema, { Bouquet } from '@src/models/bouquets.models';
+import BouquetSchema, { Bouquet } from '../models/bouquets.models';
 import validate from '../middlewares/validateRequest';
 
 const controller: Router = express.Router();
