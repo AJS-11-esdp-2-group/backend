@@ -1,20 +1,9 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const cors_1 = __importDefault(require("cors"));
 const express_1 = __importDefault(require("express"));
-const jet_logger_1 = __importDefault(require("jet-logger"));
 const items_controller_1 = __importDefault(require("./controllers/items.controller"));
 const suppliers_controller_1 = __importDefault(require("./controllers/suppliers.controller"));
 const users_controller_1 = __importDefault(require("./controllers/users.controller"));
@@ -30,16 +19,16 @@ const recipes_controller_1 = __importDefault(require("./controllers/recipes.cont
 const bouquetsImage_controller_1 = __importDefault(require("./controllers/bouquetsImage.controller"));
 const itemsPrices_controller_1 = __importDefault(require("./controllers/itemsPrices.controller"));
 const sale_controller_1 = __importDefault(require("./controllers/sale.controller"));
-const run = () => __awaiter(void 0, void 0, void 0, function* () {
-    app.listen(PORT, () => {
-        jet_logger_1.default.info(`Server is running on http://localhost:${PORT}`);
-    });
-});
 const app = (0, express_1.default)();
-const PORT = 8000;
+const port = process.env.PORT || 8080;
 app.use(express_1.default.json());
 app.use(express_1.default.static("public"));
-app.use((0, cors_1.default)());
+app.get('/', (_req, res) => {
+    return res.send('Express Typescript on Vercel 8');
+});
+app.get('/ping', (_req, res) => {
+    return res.send('pong 🏓');
+});
 app.use("/items", items_controller_1.default);
 app.use("/suppliers", suppliers_controller_1.default);
 app.use("/users", users_controller_1.default);
@@ -55,4 +44,6 @@ app.use("/recipes", recipes_controller_1.default);
 app.use("/bouquets_images", bouquetsImage_controller_1.default);
 app.use("/items_prices", itemsPrices_controller_1.default);
 app.use("/sales", sale_controller_1.default);
-run().catch(jet_logger_1.default.err);
+app.listen(port, () => {
+    return console.log(`Server is listening on ${port}`);
+});
