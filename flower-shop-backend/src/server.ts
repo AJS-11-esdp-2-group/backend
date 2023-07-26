@@ -1,5 +1,5 @@
 import cors from "cors";
-import express from "express";
+import express, {Request, Response} from "express";
 import logger from "jet-logger";
 import itemController from "./controllers/items.controller";
 import suppliersController from "./controllers/suppliers.controller";
@@ -17,18 +17,21 @@ import bouquetsImageController from "./controllers/bouquetsImage.controller";
 import itemsPricesControllers from './controllers/itemsPrices.controller';
 import saleControllers from './controllers/sale.controller'
 
-const run = async () => {
-  app.listen(PORT, () => {
-    logger.info(`Server is running on http://localhost:${PORT}`);
-  });
-};
+const app = express()
+const port = process.env.PORT || 8080
 
-const app = express();
-const PORT = 8000;
 
 app.use(express.json());
 app.use(express.static("public"));
-app.use(cors());
+
+
+app.get('/', (_req: Request, res: Response) => {
+	return res.send('Express Typescript on Vercel 8')
+})
+
+app.get('/ping', (_req: Request, res: Response) => {
+	return res.send('pong 🏓')
+})
 
 app.use("/items", itemController);
 app.use("/suppliers", suppliersController);
@@ -46,4 +49,6 @@ app.use("/bouquets_images", bouquetsImageController);
 app.use("/items_prices", itemsPricesControllers);
 app.use("/sales", saleControllers);
 
-run().catch(logger.err);
+app.listen(port, () => {
+	return console.log(`Server is listening on ${port}`)
+});
