@@ -13,9 +13,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const db_1 = __importDefault(require("@src/db/db"));
-const users_model_1 = __importDefault(require("@src/models/users.model"));
-const validateRequest_1 = __importDefault(require("@src/middlewares/validateRequest"));
+const db_1 = __importDefault(require("../db/db"));
+const users_model_1 = __importDefault(require("../models/users.model"));
+const validateRequest_1 = __importDefault(require("../middlewares/validateRequest"));
 const nanoid_1 = require("nanoid");
 const controller = express_1.default.Router();
 controller.post("/", (0, validateRequest_1.default)(users_model_1.default), (req, res) => __awaiter(void 0, void 0, void 0, function* () {

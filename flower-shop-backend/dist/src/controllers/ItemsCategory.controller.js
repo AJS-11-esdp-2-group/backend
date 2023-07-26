@@ -13,9 +13,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const db_1 = __importDefault(require("@src/db/db"));
-const category_models_1 = __importDefault(require("@src/models/category.models"));
-const validateRequest_1 = __importDefault(require("@src/middlewares/validateRequest"));
+const db_1 = __importDefault(require("../db/db"));
+const category_models_1 = __importDefault(require("../models/category.models"));
+const validateRequest_1 = __importDefault(require("../middlewares/validateRequest"));
 const controller = express_1.default.Router();
 controller.get("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {

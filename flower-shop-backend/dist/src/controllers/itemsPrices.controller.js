@@ -14,10 +14,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-const validateRequest_1 = __importDefault(require("@src/middlewares/validateRequest"));
-const itemsPrices_1 = __importDefault(require("@src/models/itemsPrices"));
+const validateRequest_1 = __importDefault(require("../middlewares/validateRequest"));
+const itemsPrices_1 = __importDefault(require("../models/itemsPrices"));
 const express_1 = __importDefault(require("express"));
-const db_1 = __importDefault(require("@src/db/db"));
+const db_1 = __importDefault(require("../db/db"));
 const controller = express_1.default.Router();
 controller.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {

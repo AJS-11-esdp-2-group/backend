@@ -13,7 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const db_1 = __importDefault(require("@src/db/db"));
+const db_1 = __importDefault(require("../db/db"));
 const controller = express_1.default.Router();
 controller.get("/country", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {

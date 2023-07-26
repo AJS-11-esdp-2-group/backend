@@ -15,9 +15,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 const express_1 = __importDefault(require("express"));
-const db_1 = __importDefault(require("@src/db/db"));
-const item_model_1 = __importDefault(require("@src/models/item.model"));
-const validateRequest_1 = __importDefault(require("@src/middlewares/validateRequest"));
+const db_1 = __importDefault(require("../db/db"));
+const item_model_1 = __importDefault(require("../models/item.model"));
+const validateRequest_1 = __importDefault(require("../middlewares/validateRequest"));
 const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
 const nanoid_1 = require("nanoid");
