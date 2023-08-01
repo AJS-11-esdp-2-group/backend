@@ -58,12 +58,14 @@ controller.post("/showcase", async (req: Request, res: Response) => {
   const token = req.get('Authorization');
 
   if(!token) return res.status(400).send('Token must present!');
-
+  
   try {
     const user = await db.query('SELECT * FROM users WHERE token = $1', [token]);
-    if (!user.rows.length) {
-      return res.status(400).send({ message: 'User not found' });
-    }
+    
+    if (!user.rows.length) return res.status(400).send({ message: 'User not found' });
+    
+    if(user.rows[0].id_role !== 1 && 2) return res.status(403).send({message: 'Access forbidden'})
+    
     const {bouquets} = req.body as {bouquets: Array<string>};
     
     if(!bouquets || !bouquets.length) return res.status(400).send({message:'Bad request'});
