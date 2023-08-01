@@ -1,9 +1,9 @@
 import db from "../db/db";
 
 const nextOrderNumbers = async(amount: number) => {
-    const lastOrderNumber = (await db.query(`select id, order_number from orders order by id DESC limit 1`)).rows[0].order_number;
+    const lastOrderNumbers = (await db.query(`select id, order_number from orders order by id DESC limit 50`)).rows;
     
-    if(!lastOrderNumber) {
+    if(!lastOrderNumbers.length) {
         let numbers = [];
         for (let i = 1; i <= amount; i++) {
             numbers.push('av-' + i.toString().padStart(4, '0'));
@@ -12,14 +12,17 @@ const nextOrderNumbers = async(amount: number) => {
         return numbers;
     };
     
-    const numberString = lastOrderNumber.slice(3);
-    const number = parseInt(numberString);
+    const orderNumbers: Array<number> = lastOrderNumbers.map(order => {
+        return parseInt(order.order_number.slice(3))
+    });
+    
+    const maxNumber = Math.max(...orderNumbers);
     
     let numbers = [];
     for (let i =1; i <= amount; i++) {
-        numbers.push('av-' + (i+number).toString().padStart(4, '0'));
+        numbers.push('av-' + (i+maxNumber).toString().padStart(4, '0'));
     }
-
+    
     return numbers;
 };
 
