@@ -72,6 +72,21 @@ controller.post("/showcase", async (req: Request, res: Response) => {
     
     const actions = bouquets.map(async(bouquet, i) => {
       const create_date = new Date().toISOString();
+
+      const bouquetRecipes = (await db.query(`
+      select r.id, r.id_bouquet, r.id_item, r.qty, ipm.price
+      from recipes r
+      join (
+        select il.item_id, il.last_date, ip.price
+        from(
+          select item_id, max(added_date) as last_date
+          from items_prices 
+          group by item_id
+        )il
+        join items_prices ip on ip.added_date = il.last_date
+      ) ipm on r.id_item = ipm.item_id
+      where id_bouquet in (${bouquet})
+      `)).rows;
       
       const price = await db.query(`
         select distinct on(b.id) 
@@ -92,13 +107,25 @@ controller.post("/showcase", async (req: Request, res: Response) => {
         WHERE b.id = $1
         group by b.id
     `, [parseInt(bouquet)]);
+
+    if(bouquetRecipes.length) {
+      bouquetRecipes.forEach(async(recipe) => {
+        await db.query(`
+          INSERT INTO actions (operation_type_id, source_id, target_id, item_id, qty, price, total_price, invoice_number, date, update_date, user_id)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        `, [3, 2, 4, recipe.id_item, 
+          parseInt(recipe.qty), parseInt(recipe.price), 
+          (parseInt(recipe.qty)*parseInt(recipe.price)), 
+          newOrderNumbers[i],create_date, null, user.rows[0].id]);
+      });
+    }
     
       return db.query(`
         INSERT INTO orders (order_number, bouquet_id, actual_price, total_sum, added_date, update_date, user_id)
         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`, 
         [newOrderNumbers[i], bouquet, 
         price.rows[0].sum === null? 0: parseInt(price.rows[0].sum), 
-        price.rows[0].sum === null? 0: parseInt(price.rows[0].sum), 
+        0, 
         create_date, null, user.rows[0].id]);
     });
     
