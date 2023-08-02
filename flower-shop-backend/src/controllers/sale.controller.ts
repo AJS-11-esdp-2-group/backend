@@ -51,6 +51,55 @@ controller.get("/showcase/:bouquet_id", async (req: Request, res: Response) => {
   }
 });
 
+controller.put("/:bouquet_id", async (req: Request, res: Response) => {
+  try {
+    const id = req.params.bouquet_id;
+    const token = req.get("Authorization");
+
+    const { total_sum, count } = req.body;
+
+    const user_id = await db.query("SELECT id FROM users WHERE token = $1", [
+      token
+    ]);
+    if (!user_id.rows.length) {
+      return res.status(400).send({ message: "User not found" });
+    }
+    const order = await db.query(
+      `select count (o.bouquet_id) from orders o 
+      where o.bouquet_id = $1 
+      and o.order_number in (select a.invoice_number from actions a where a.operation_type_id =3)`,
+      [id]
+    );
+
+    if (!order.rows.length || order.rows[0].count < count) {
+      return res
+        .status(400)
+        .send({ error: "Bouquet_not found or quantity more than in the base" });
+    }
+    const update_date = new Date().toISOString();
+    await db.query(
+      `UPDATE actions SET operation_type_id = 2, update_date = $1,
+      user_id = (SELECT id FROM users WHERE token = $2)
+      WHERE
+      invoice_number in ( select order_number from orders where bouquet_id = $3 and order_number in
+        (select a.invoice_number from actions a where a.operation_type_id = 3) order by order_number limit $4)
+      `,
+      [update_date, token, id, count]
+    );
+
+    await db.query(
+      `UPDATE orders
+      SET total_sum = $1, update_date = $2, user_id = (SELECT id FROM users WHERE token = $3)
+      WHERE bouquet_id in (select bouquet_id from orders where bouquet_id = $4 order by order_number limit $5)`,
+      [total_sum, update_date, token, id, count]
+    );
+
+    res.status(200).send({ message: "Update was successful" });
+  } catch (error) {
+    res.status(500).send({ error: error.message });
+  }
+});
+
 controller.post("/showcase", async (req: Request, res: Response) => {
   const token = req.get('Authorization');
 
@@ -131,55 +180,6 @@ controller.post("/showcase", async (req: Request, res: Response) => {
     const results = await Promise.all(actions);
     res.status(200).send(results.map((result) => result.rows[0]));
     
-  } catch (error) {
-    res.status(500).send({ error: error.message });
-  }
-});
-
-controller.put("/:bouquet_id", async (req: Request, res: Response) => {
-  try {
-    const id = req.params.bouquet_id;
-    const token = req.get("Authorization");
-
-    const { total_sum, count } = req.body;
-
-    const user_id = await db.query("SELECT id FROM users WHERE token = $1", [
-      token
-    ]);
-    if (!user_id.rows.length) {
-      return res.status(400).send({ message: "User not found" });
-    }
-    const order = await db.query(
-      `select count (o.bouquet_id) from orders o 
-      where o.bouquet_id = $1 
-      and o.order_number in (select a.invoice_number from actions a where a.operation_type_id =3)`,
-      [id]
-    );
-
-    if (!order.rows.length || order.rows[0].count < count) {
-      return res
-        .status(400)
-        .send({ error: "Bouquet_not found or quantity more than in the base" });
-    }
-    const update_date = new Date().toISOString();
-    await db.query(
-      `UPDATE actions SET operation_type_id = 2, update_date = $1,
-      user_id = (SELECT id FROM users WHERE token = $2)
-      WHERE
-      invoice_number in ( select order_number from orders where bouquet_id = $3 and order_number in
-        (select a.invoice_number from actions a where a.operation_type_id = 3) order by order_number limit $4)
-      `,
-      [update_date, token, id, count]
-    );
-
-    await db.query(
-      `UPDATE orders
-      SET total_sum = $1, update_date = $2, user_id = (SELECT id FROM users WHERE token = $3)
-      WHERE bouquet_id in (select bouquet_id from orders where bouquet_id = $4 order by order_number limit $5)`,
-      [total_sum, update_date, token, id, count]
-    );
-
-    res.status(200).send({ message: "Update was successful" });
   } catch (error) {
     res.status(500).send({ error: error.message });
   }
