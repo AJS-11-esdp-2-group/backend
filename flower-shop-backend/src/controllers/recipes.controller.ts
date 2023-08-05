@@ -14,7 +14,6 @@ controller.get('/', async (req: Request, res: Response) => {
         c.id,
         b.bouquet_name,
         i.item_name,
-        i.image_large,
         c.qty
       FROM
         recipes c
@@ -36,7 +35,6 @@ controller.get('/:id', async (req: Request, res: Response) => {
           c.id,
           c.id_bouquet,
           i.item_name,
-          i.image_large,
           c.qty
         FROM
           recipes c
@@ -103,7 +101,6 @@ controller.put('/:id', validate(RecipeSchema), async (req: Request, res: Respons
           c.id,
           c.id_bouquet,
           i.item_name,
-          i.image_large,
           c.qty
         FROM
         recipes c
