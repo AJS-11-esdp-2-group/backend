@@ -11,16 +11,11 @@ controller.get("/", async (req: Request, res: Response) => {
       `select
       s.id,
       s.name_supplier,
-      s.contact_person,
       s.email,
       s.phone,
       s.address,
-      c.name_country,
-      ci.name_city,
-      s.create_date
+      s.comment
       from suppliers s
-      inner join countries c on c.id = s.id_country
-      inner join cities ci on ci.id = s.id_city 
 order by s.name_supplier`
     );
 
@@ -37,16 +32,11 @@ controller.get("/:id", async (req: Request, res: Response) => {
       `select
       s.id,
       s.name_supplier,
-      s.contact_person,
       s.email,
       s.phone,
       s.address,
-      c.name_country,
-      ci.name_city,
-      s.create_date
+      s.comment
       from suppliers s
-      inner join countries c on c.id = s.id_country
-      inner join cities ci on ci.id = s.id_city
       WHERE s.id = $1`,
       [id]
     );
@@ -68,12 +58,10 @@ controller.put(
       const id = req.params.id;
       const {
         name_supplier,
-        contact_person,
         email,
         phone,
         address,
-        id_country,
-        id_city
+        comment
       } = req.body as Supplier;
 
       const supplier = await db.query("SELECT * FROM suppliers WHERE id = $1", [
@@ -87,22 +75,18 @@ controller.put(
       const updatedSupplier = await db.query(
         `UPDATE suppliers SET
             name_supplier = $1,
-            contact_person = $2,
-            email = $3,
-            phone = $4,
-            address = $5,
-            id_country = $6,
-            id_city = $7
+            email = $2,
+            phone = $3,
+            address = $4,
+            comment = $5,
             WHERE id= $8
             RETURNING *`,
         [
           name_supplier,
-          contact_person,
           email,
           phone,
           address,
-          id_country,
-          id_city,
+          comment,
           id
         ]
       );
@@ -111,16 +95,11 @@ controller.put(
         `select
         s.id,
         s.name_supplier,
-        s.contact_person,
         s.email,
         s.phone,
         s.address,
-        c.name_country,
-        ci.name_city,
-        s.create_date
+        s.comment
         from suppliers s
-        inner join countries c on c.id = s.id_country
-        inner join cities ci on ci.id = s.id_city
         WHERE s.id = $1`,
         [id]
       );
@@ -139,30 +118,25 @@ controller.post(
     try {
       const {
         name_supplier,
-        contact_person,
         email,
         phone,
         address,
-        id_country,
-        id_city
+        comment
       } = req.body as Supplier;
 
       const create_date = new Date().toISOString();
 
       const newSupplier: any = await db.query(
         `INSERT INTO suppliers as s
-            (name_supplier, contact_person, email, phone, address, id_country, id_city, create_date)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            (name_supplier, email, phone, address, comment)
+            VALUES ($1, $2, $3, $4, $5)
             RETURNING id`,
         [
           name_supplier,
-          contact_person,
           email,
           phone,
           address,
-          id_country,
-          id_city,
-          create_date
+          comment
         ]
       );
 
@@ -170,16 +144,11 @@ controller.post(
         `select
         s.id,
         s.name_supplier,
-        s.contact_person,
         s.email,
         s.phone,
         s.address,
-        c.name_country,
-        ci.name_city,
-        s.create_date
+        s.comment
         from suppliers s
-        inner join countries c on c.id = s.id_country
-        inner join cities ci on ci.id = s.id_city
         WHERE s.id = $1`,
         [newSupplier.rows[0].id]
       );

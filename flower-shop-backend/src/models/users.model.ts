@@ -9,8 +9,6 @@ const UserSchema = object({
     first_name: string().required('Name is required'), 
     last_name: string().required('Lastname is required'),
     address: string().required('Address is required').max(55),
-    country: number().required(),
-    city: number(),
     createdOn: date().default(() => new Date()) 
 });
 
