@@ -1,6 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import express, { Request, Router, Response } from 'express';
+import processFile from "../middlewares/upload";
+import {format} from "util";
+import {Storage} from "@google-cloud/storage";
 import db from '@src/db/db';
 import ItemsSchema, { Items } from '@src/models/item.model';
 import validate from '@src/middlewares/validateRequest';
@@ -11,16 +14,9 @@ import { uploadPath } from '../../config';
 
 const controller: Router = express.Router();
 
-const storage = multer.diskStorage({
-  destination: (req, file, cd) => {
-    cd(null, uploadPath);
-  },
-  filename(req, file, cd) {
-    cd(null, nanoid() + path.extname(file.originalname));
-  },
-});
+const storage = new Storage({ keyFilename: "google-cloud-key.json" });
+const bucket = storage.bucket("flower_shop_1");
 
-const upload = multer({ storage });
 controller.get('/', async (req: Request, res: Response) => {
   try {
     const item = await db.query(`
@@ -76,23 +72,25 @@ controller.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
-
-
-controller.post(
-  '/', validate(ItemsSchema),
-  upload.single('image'),
-  async (req: Request, res: Response) => {
-
+controller.post('/', async (req: Request, res: Response) => {
+  await processFile(req, res);
+  const fileOriginalName = req.file?.originalname;
     try {
       const token = req.get('Authorization');
-      const user = await db.query(
-        'SELECT id FROM users WHERE token = $1',
+      
+      if(!token) res.status(400).send({message: "Token must be present"})
+      const user = (await db.query(
+        'SELECT * FROM users WHERE token = $1',
         [token],
-      );
+      )).rows[0]; 
+        
+      if (user.id_role !== 1 && user.id_role !== 2) return res.status(403).send({ message: 'Access forbidden'});
 
-      if (user.rows.length === 0) {
-        return res.status(401).send({ error: 'Unauthorized' });
-      }
+      const itemData = {...req.body};
+
+      if(!itemData.item_name) return res.status(400).send({message: "Name is required"})
+      if(!itemData.id_category) return res.status(400).send({message: "Goods category is required"})
+      if(!itemData.id_subcategory) return res.status(400).send({message: "Goods subcategory is required"})
 
       const {
         item_name,
@@ -104,52 +102,73 @@ controller.post(
       } = req.body as Items;
 
       const create_date = new Date().toISOString();
+      const id_user = user.id as number;
 
-      let image_small = 'img.jpeg';
-      if (req.file) {
-        image_small = req.file.path;
+      if (!req.file) {
+        return res.status(400).send({ message: "Please upload a file!" });
       }
-      const id_user = user.rows[0].id as number;
-
-      const newItem = await db.query(
-        `INSERT INTO items (
-      item_name,
-      item_description,
-      id_category,
-      id_subcategory,
-      id_under_subcategory,
-      image_small,
-      create_date,
-      id_user,
-      price
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, COALESCE($8, 0), $9) RETURNING *`,
-        [
-          item_name,
-          item_description,
-          id_category,
-          id_subcategory,
-          id_under_subcategory,
-          image_small,
-          create_date,
-          id_user,
-          price,
-        ],
-      );
-
-      const createdItem = newItem.rows[0];
-      res.status(200).send({
-        message: 'Item created successfully',
-        item: createdItem,
+    
+      const blob = bucket.file(nanoid() + path.extname(req.file.originalname));
+        
+      const blobStream = blob.createWriteStream({
+        resumable: false,
       });
+        
+      const fileOriginalname = req.file.originalname;
+
+      blobStream.on("error", (err) => {
+        res.status(500).send({ message: err.message });
+      });
+    
+      blobStream.on("finish", async () => {
+        const publicUrl = format(
+          `https://storage.googleapis.com/${bucket.name}/${blob.name}`
+        );
+          
+        try {
+          const newItem = (await db.query(
+            `INSERT INTO items (
+            item_name,
+            item_description,
+            id_category,
+            id_subcategory,
+            id_under_subcategory,
+            image_small,
+            create_date,
+            id_user,
+            price
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, COALESCE($8, 0), $9) RETURNING *`,
+            [
+              item_name,
+              item_description,
+              id_category,
+              id_subcategory,
+              id_under_subcategory,
+              publicUrl,
+              create_date,
+              id_user,
+              price,
+            ],
+          )).rows[0];
+
+          res.status(200).send({
+            message: 'Item created successfully',
+            item: newItem,
+          });
+        } catch (error) {
+          res.status(500).send({ error: error.message });
+        }
+      });
+    
+      blobStream.end(req.file.buffer);
     } catch (error) {
       res.status(500).send({ error: error.message });
     }
-
   });
+
 controller.put(
   '/:id',
   validate(ItemsSchema),
-  upload.single('image'),
   async (req: Request, res: Response) => {
     try {
       const token = req.get('Authorization');
