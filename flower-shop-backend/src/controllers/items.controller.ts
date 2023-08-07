@@ -27,9 +27,11 @@ controller.get('/', async (req: Request, res: Response) => {
     s.item_description,
     s.image_small,
     s.create_date,
-    u.username
+    u.username,
+	s.id_category
 FROM
     items s
+    INNER JOIN items_categories c ON s.id_category = c.id
     INNER JOIN users u ON u.id = s.id_user`);
 
     res.status(200).send(item.rows);
