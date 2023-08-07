@@ -5,6 +5,8 @@ import {Storage} from "@google-cloud/storage";
 import db from "@src/db/db";
 import {uploadPath} from '../../config';
 import fs from "fs";
+import { nanoid } from 'nanoid';
+import path from 'path';
 
 const controller: Router = express.Router();
 
@@ -26,7 +28,7 @@ controller.get('/', async (req: Request, res: Response) => {
 controller.post("/", async(req: Request, res: Response) => {
     await processFile(req, res);
     const fileOriginalName = req.file?.originalname;
-
+  
     try {
         const imageData = {...req.body};
         if(!imageData.id_bouquet) return res.status(400).send({message: 'Id of bouquet is required'});
@@ -35,7 +37,8 @@ controller.post("/", async(req: Request, res: Response) => {
           return res.status(400).send({ message: "Please upload a file!" });
         }
     
-        const blob = bucket.file(req.file.originalname);
+        const blob = bucket.file(nanoid() + path.extname(req.file.originalname));
+        
         const blobStream = blob.createWriteStream({
           resumable: false,
         });
