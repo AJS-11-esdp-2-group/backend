@@ -241,7 +241,7 @@ controller.post("/showcase_custom", async (req: Request, res: Response) => {
     );
     const arrItems = JSON.parse(items);
     const totalPrice = Array.from(arrItems).reduce(
-      (accumulator: any, item: any) => accumulator + item.price,
+      (accumulator: any, item: any) => accumulator + parseInt(item.price)*parseInt(item.qty),
       0
     );
     const date = new Date().toISOString();
@@ -261,8 +261,8 @@ controller.post("/showcase_custom", async (req: Request, res: Response) => {
                 VALUES (3,2,4, $1, $2, $3, $4,$5,$6,(SELECT id FROM users WHERE token = $7));
                 `,
         [
-          item.id_item,
-          item.count,
+          item.id,
+          item.qty,
           item.price,
           totalPrice,
           `AV${orderNumber}`,
