@@ -6,7 +6,6 @@ const ItemSchema = object({
   price: number().default(0),
   id_category: number().required('Goods category is required'),
   id_subcategory: number().required('Goods subcategory is required'),
-  id_under_subcategory: number(),
   image_small: string(),
   id_user: number(),
   create_date: date(),
