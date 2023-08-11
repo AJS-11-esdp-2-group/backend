@@ -9,12 +9,12 @@ import suppliersStoragesController from '@src/controllers/suppliersStorages.cont
 import storagesController from '@src/controllers/storages.controller'
 import itemsCategoryController from "@src/controllers/ItemsCategory.controller";
 import itemsSubcategoryController from "@src/controllers/ItemsSubcategory.controller";
-import locationController from "@src/controllers/location.controller";
 import bouquetController from "@src/controllers/bouquets.controller";
 import recipesController from "@src/controllers/recipes.controller";
 import bouquetsImageController from "./controllers/bouquetsImage.controller";
 import itemsPricesControllers from '@src/controllers/itemsPrices.controller';
-import saleControllers from '@src/controllers/sale.controller'
+import saleControllers from '@src/controllers/sale.controller';
+import soldControllers from '@src/controllers/sold.controller';
 
 const run = async () => {
   app.listen(PORT, () => {
@@ -37,11 +37,11 @@ app.use("/suppliers_controllers", suppliersStoragesController);
 app.use("/storages", storagesController);
 app.use("/items_category", itemsCategoryController);
 app.use("/items_subcategory", itemsSubcategoryController);
-app.use("/location", locationController);
 app.use("/bouquets", bouquetController);
 app.use("/recipes", recipesController);
 app.use("/bouquets_images", bouquetsImageController);
 app.use("/items_prices", itemsPricesControllers);
 app.use("/sales", saleControllers);
+app.use("/sold", soldControllers);
 
 run().catch(logger.err);
