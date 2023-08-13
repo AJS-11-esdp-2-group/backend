@@ -30,10 +30,10 @@ controller.get('/', async (req: Request, res: Response) => {
     u.username,
 	s.id_category,
   s.id_subcategory,
-  (COALESCE((select sum(qty) from actions where operation_type_id = 1 and item_id =s.id),0,
-			(select sum(qty) from actions where operation_type_id = 1 and item_id =s.id)) -
-  COALESCE (((select sum(qty) from actions where operation_type_id != 1 and item_id =s.id)),0,
-   			(select sum(qty) from actions where operation_type_id != 1 and item_id =s.id))) as "available_qty"
+  (COALESCE((select sum(qty) from actions where operation_type_id = 1 and item_id = s.id),0,
+			(select sum(qty) from actions where operation_type_id = 1 and item_id = s.id)) -
+  COALESCE (((select sum(qty) from actions where operation_type_id not in(1,4) and item_id =s.id)),0,
+   			(select sum(qty) from actions where operation_type_id not in(1,4) and item_id =s.id))) as "available_qty"
 FROM
     items s
     INNER JOIN items_categories c ON s.id_category = c.id
