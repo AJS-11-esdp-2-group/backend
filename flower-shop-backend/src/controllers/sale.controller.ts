@@ -478,4 +478,35 @@ controller.get(":general_order_id", async (req: Request, res: Response) => {
   }
 });
 
+controller.get("/basket", async (req: Request, res: Response) =>{
+  const token = req.get("Authorization");
+
+  if (!token) return res.status(400).send("Token must present!");
+
+  try {
+    const user = await db.query("SELECT * FROM users WHERE token = $1", [
+      token
+    ]);
+
+    if (!user.rows.length)
+      return res.status(400).send({ message: "User not found" });
+
+    if (user.rows[0].id_role !== 1 && 2)
+      return res.status(403).send({ message: "Access forbidden" });
+
+    const result = (await db.query(`
+      select o.bouquet_id, o.actual_price,o.total_sum, o.payment_type, o.added_date 
+      from orders o
+      join (
+        select distinct invoice_number from actions
+        where operation_type_id = 5
+      ) b ON b.invoice_number = o.order_number
+    `)).rows;
+
+      res.status(200).send(result);
+  } catch (error) {
+    res.status(500).send({message: error.message});
+  }
+});
+
 export default controller;
