@@ -364,4 +364,118 @@ controller.put("/sendBasket/:order_number", async (req: Request, res: Response) 
   }
 });
 
+
+controller.post("/", async (req: Request, res: Response) => {
+  const token = req.get("Authorization");
+  if (!token) return res.status(400).send("Token must be present!");
+
+  try {
+    const user = await db.query("SELECT * FROM users WHERE token = $1", [token]);
+    if (!user.rows.length) return res.status(400).send({ message: "User not found" });
+
+    const { bouquets } = req.body as { bouquets: Array<{ bouquet: number, actual_price: number, total_price: number, payment_type: number }> };
+    if (!bouquets || !bouquets.length) return res.status(400).send({ message: "Bad request" });
+    const orderNum = nanoid();
+    const orderPrefix = "av-"
+    const create_date = new Date().toISOString();
+    const totalSales = bouquets.reduce((total, bouquet) => total + bouquet.total_price, 0);
+    const lastGeneralOrder = await db.query("SELECT order_number FROM general_orders ORDER BY id DESC LIMIT 1");
+    const lastOrderNumber = lastGeneralOrder.rows[0]?.order_number || "av-0000";
+    const lastNumber = parseInt(lastOrderNumber.split("-")[1]);
+    const nextNumber = lastNumber + 1;
+    const orderNumber = `${orderPrefix}${nextNumber.toString().padStart(4, "0")}`;
+
+    const generalOrderIdResult = await db.query(
+      `
+      INSERT INTO general_orders (order_number, order_date, total_sales)
+      VALUES ($1, $2, $3) RETURNING id`,
+      [
+        orderNumber,
+        new Date().toISOString(),
+        totalSales
+      ]
+    );
+    const generalOrderId = generalOrderIdResult.rows[0].id as number;
+
+    await Promise.all(
+      bouquets.map(async (bouquetData) => {
+        const { bouquet, actual_price, total_price, payment_type } = bouquetData;
+
+        const orderIdResult = await db.query(
+          `
+          INSERT INTO orders (general_order_id, order_number, bouquet_id, actual_price, total_sum, payment_type, added_date, update_date, user_id)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
+          [
+            generalOrderId,
+            `av-${orderNum}`,
+            bouquet,
+            actual_price,
+            total_price,
+            payment_type,
+            create_date,
+            null,
+            user.rows[0].id
+          ]
+        );
+        const orderId = orderIdResult.rows[0].id;
+
+        const bouquetRecipes = (
+          await db.query(`
+          SELECT r.id, r.id_bouquet, r.id_item, r.qty, i.price
+          FROM recipes r
+          JOIN items i ON r.id_item = i.id
+          WHERE id_bouquet = $1
+          `, [bouquet])
+        ).rows;
+
+        const actions = bouquetRecipes.map(async (recipe) => {
+          await db.query(
+            `
+            INSERT INTO actions (operation_type_id, source_id, target_id, item_id, qty, price, total_price, invoice_number, date, update_date, user_id)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            `,
+            [
+              2,
+              3,
+              9,
+              recipe.id_item,
+              parseInt(recipe.qty),
+              parseInt(recipe.price),
+              parseInt(recipe.qty) * parseInt(recipe.price),
+              `av-${orderNum}`,
+              create_date,
+              null,
+              user.rows[0].id
+            ]
+          );
+        });
+
+        return Promise.all([orderId, ...actions]);
+      })
+    );
+
+    res.status(200).send({ message: "Orders and general order created successfully" });
+  } catch (error) {
+    res.status(500).send({ error: error.message });
+  }
+});
+
+controller.get("/", async (req: Request, res: Response) => {
+  try {
+    const generalOrders = await db.query("SELECT * FROM general_orders");
+    res.status(200).send(generalOrders.rows);
+  } catch (error) {
+    res.status(500).send({ error: error.message });
+  }
+});
+controller.get(":general_order_id", async (req: Request, res: Response) => {
+  const { general_order_id } = req.params;
+  try {
+    const orders = await db.query("SELECT * FROM orders WHERE general_order_id = $1", [general_order_id]);
+    res.status(200).send(orders.rows);
+  } catch (error) {
+    res.status(500).send({ error: error.message });
+  }
+});
+
 export default controller;
