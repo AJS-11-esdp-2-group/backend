@@ -18,13 +18,14 @@ controller.get("/showcase", async (req: Request, res: Response) => {
       `
       select
       o.bouquet_id as id,
-      count(o.bouquet_id),
+	  o.order_number,					
       o.actual_price,
       (select  bouquet_name from bouquets where id = o.bouquet_id) as "name_bouquet",
-      (select image from bouquets_images where id_bouquet = o.bouquet_id limit 1) as "image_bouquet"
+      (select image from bouquets_images where id_bouquet = o.bouquet_id limit 1) as "image_bouquet",
+	  (select username from users where id = o.user_id),
+	  o.added_date
       from orders o
       where o.order_number in ( select invoice_number from actions where operation_type_id = 3)
-      group by o.bouquet_id, o.actual_price
       `
     );
 
@@ -38,17 +39,19 @@ controller.get("/showcase/:bouquet_id", async (req: Request, res: Response) => {
   try {
     const orderNumber = req.params.bouquet_id;
     const query = `
-      select
-      r.id_bouquet,
-      b.bouquet_name as name_bouquet,
-      (select image from bouquets_images where id_bouquet = r.id_bouquet limit 1 )as image_bouquet,
-      i.item_name,
-      i.price,
-      r.qty
-      from recipes r
-      left join items i on i.id = r.id_item 
-      left join bouquets b on b.id = r.id_bouquet
-      where r.id_bouquet = $1
+	  select
+	  a.invoice_number,
+	  u.username,
+	  a.date,
+	  (select bouquet_name from bouquets where id in (select bouquet_id from orders where order_number = $1 )),
+	  (select image from bouquets_images where id_bouquet in (select bouquet_id from orders where order_number = $1 ))as image_bouquet,
+	  i.item_name,
+    a.qty,
+	  a.price
+	  from actions a
+	  inner join items i on i.id = a.item_id 
+	  inner join users u on u.id = a.user_id
+	  where invoice_number = $1
       `;
 
     const result = await db.query(query, [orderNumber]);
@@ -241,7 +244,8 @@ controller.post("/showcase_custom", async (req: Request, res: Response) => {
     );
     const arrItems = JSON.parse(items);
     const totalPrice = Array.from(arrItems).reduce(
-      (accumulator: any, item: any) => accumulator + parseInt(item.price)*parseInt(item.qty),
+      (accumulator: any, item: any) =>
+        accumulator + parseInt(item.price) * parseInt(item.qty),
       0
     );
     const date = new Date().toISOString();
@@ -306,6 +310,57 @@ controller.post("/showcase_custom", async (req: Request, res: Response) => {
     res.status(500).send({
       message: `Could not upload the file: ${fileOriginalName}. ${err}`
     });
+  }
+});
+
+controller.put("/write_off/:order_number", async (req: Request, res: Response) => {
+  try {
+    const id = req.params.order_number;
+    const token = req.get("Authorization");
+    const user_id = await db.query("SELECT id FROM users WHERE token = $1", [
+      token
+    ]);
+    if (!user_id.rows.length) {
+      return res.status(400).send({ message: "User not found" });
+    }
+
+    const update_date = new Date().toISOString();
+    await db.query(
+      `UPDATE actions SET operation_type_id = 4, update_date = $1,
+      user_id = (SELECT id FROM users WHERE token = $2)
+      WHERE
+      invoice_number = $3
+      `,
+      [update_date, token, id]
+    );
+    res.status(200).send({ message: "Update was successful" });
+  } catch (error) {
+    res.status(500).send({ error: error.message });
+  }
+});
+controller.put("/sendBasket/:order_number", async (req: Request, res: Response) => {
+  try {
+    const id = req.params.order_number;
+    const token = req.get("Authorization");
+    const user_id = await db.query("SELECT id FROM users WHERE token = $1", [
+      token
+    ]);
+    if (!user_id.rows.length) {
+      return res.status(400).send({ message: "User not found" });
+    }
+
+    const update_date = new Date().toISOString();
+    await db.query(
+      `UPDATE actions SET operation_type_id = 5, update_date = $1,
+      user_id = (SELECT id FROM users WHERE token = $2)
+      WHERE
+      invoice_number = $3
+      `,
+      [update_date, token, id]
+    );
+    res.status(200).send({ message: "Update was successful" });
+  } catch (error) {
+    res.status(500).send({ error: error.message });
   }
 });
 
