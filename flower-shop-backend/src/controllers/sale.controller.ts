@@ -472,11 +472,12 @@ controller.get("/:general_order_id", async (req: Request, res: Response) => {
   const { general_order_id } = req.params;
   try {
     const orders = await db.query(
-      `SELECT o.*, u.last_name, u.first_name, pt.name as payment_type
+      `SELECT o.*, u.last_name, u.first_name, pt.name as payment_type, b.bouquet_name
       FROM orders o
       INNER JOIN users u ON o.user_id = u.id
       INNER JOIN payment_type pt ON o.payment_type = pt.id
-      WHERE o.general_order_id =$1`, 
+      INNER JOIN bouquets b ON o.bouquet_id = b.id
+      WHERE o.general_order_id = $1`, 
       [general_order_id]);
     res.status(200).send(orders.rows);
   } catch (error) {
