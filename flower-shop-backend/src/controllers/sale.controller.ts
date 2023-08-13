@@ -472,7 +472,7 @@ controller.get("/:general_order_id", async (req: Request, res: Response) => {
   const { general_order_id } = req.params;
   try {
     const orders = await db.query(
-      `SELECT o.*, u.last_name, u.first_name, pt.name
+      `SELECT o.*, u.last_name, u.first_name, pt.name as payment_type
       FROM orders o
       INNER JOIN users u ON o.user_id = u.id
       INNER JOIN payment_type pt ON o.payment_type = pt.id
