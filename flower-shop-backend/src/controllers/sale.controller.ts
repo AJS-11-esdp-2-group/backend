@@ -487,7 +487,7 @@ controller.get("/basket", async (req: Request, res: Response) =>{
 
     const result = (await db.query(`
     select o.bouquet_id as id, o.actual_price, o.total_sum,  
-    o.added_date, b.invoice_number as order_number, i.image as image_bouquet 
+    o.added_date, b.invoice_number as order_number, i.image as image_bouquet, bt.bouquet_name as name_bouquet 
     from orders o
     join (
       select distinct invoice_number from actions
@@ -496,6 +496,7 @@ controller.get("/basket", async (req: Request, res: Response) =>{
     join (
       select distinct on(id_bouquet) * from bouquets_images
     ) i on i.id_bouquet = o.bouquet_id
+    join bouquets bt on o.bouquet_id = bt.id
     `)).rows;
 
       res.status(200).send(result);
