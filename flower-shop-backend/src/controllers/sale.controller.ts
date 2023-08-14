@@ -486,7 +486,7 @@ controller.get("/basket", async (req: Request, res: Response) =>{
       return res.status(403).send({ message: "Access forbidden" });
 
     const result = (await db.query(`
-      select o.bouquet_id, o.actual_price,o.total_sum, o.payment_type, o.added_date 
+      select o.bouquet_id, o.actual_price,o.total_sum, o.payment_type, o.added_date, b.invoice_number
       from orders o
       join (
         select distinct invoice_number from actions
