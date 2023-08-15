@@ -7,6 +7,7 @@ import db from "@src/db/db";
 import { nanoid } from "nanoid";
 import { uploadPath } from "../../config";
 import fs from "fs";
+import { number } from "yup";
 
 const controller: Router = express.Router();
 const storage = new Storage({ keyFilename: "google-cloud-key.json" });
@@ -128,97 +129,84 @@ controller.post("/showcase", async (req: Request, res: Response) => {
       return res.status(403).send({ message: "Access forbidden" });
 
     const { bouquets } = req.body as { bouquets: Array<string> };
-
     if (!bouquets || !bouquets.length)
       return res.status(400).send({ message: "Bad request" });
-
-    const newOrderNumbers = await nextOrderNumbers(bouquets.length);
-
-    const actions = bouquets.map(async (bouquet, i) => {
-      const create_date = new Date().toISOString();
-
-      const bouquetRecipes = (
-        await db.query(`
-      select r.id, r.id_bouquet, r.id_item, r.qty, ipm.price
-      from recipes r
-      join (
-        select il.item_id, il.last_date, ip.price
-        from(
-          select item_id, max(added_date) as last_date
-          from items_prices 
-          group by item_id
-        )il
-        join items_prices ip on ip.added_date = il.last_date
-      ) ipm on r.id_item = ipm.item_id
-      where id_bouquet in (${bouquet})
-      `)
-      ).rows;
-
-      const price = await db.query(
+    for (let i = 0; i < bouquets.length; i++) {
+      let orderNumber = nanoid();
+      let create_date = new Date().toISOString();
+      await db.query(
         `
-        select distinct on(b.id) 
-        b.id, sum(qty*price) 
-        from bouquets b 
-        left join (
-          SELECT  r.id, r.id_bouquet, r.id_item, r.qty, ipf.price
-          FROM recipes r
-          LEFT JOIN (
-            select item, date,ip.price FROM(
-            SELECT item_id as item, max(added_date) as date
-            from items_prices
-            group by item_id
-            ) as fg
-            join items_prices ip on fg.date = ip.added_date
-          ) as ipf on r.id_item = ipf.item
-        ) r on r.id_bouquet = b.id
-        WHERE b.id = $1
-        group by b.id
-    `,
-        [parseInt(bouquet)]
+        INSERT INTO orders 
+        (order_number, 
+          bouquet_id, 
+          actual_price, 
+          total_sum, 
+          added_date, 
+          update_date, 
+          user_id)
+          VALUES 
+          ($1, 
+          $2,
+          (select sum(i.price * r.qty) from items i
+          inner join recipes r on r.id_item = i.id
+          where r.id_bouquet = $2), 
+          $3, 
+          $4, 
+          $5, 
+          (SELECT id FROM users WHERE token = $6)
+          ) RETURNING *`,
+        [orderNumber, bouquets[i], 0, create_date, null, token]
       );
 
-      if (bouquetRecipes.length) {
-        bouquetRecipes.forEach(async (recipe) => {
-          await db.query(
-            `
-          INSERT INTO actions (operation_type_id, source_id, target_id, item_id, qty, price, total_price, invoice_number, date, update_date, user_id)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-        `,
-            [
-              3,
-              2,
-              4,
-              recipe.id_item,
-              parseInt(recipe.qty),
-              parseInt(recipe.price),
-              parseInt(recipe.qty) * parseInt(recipe.price),
-              newOrderNumbers[i],
-              create_date,
-              null,
-              user.rows[0].id
-            ]
-          );
-        });
-      }
-
-      return db.query(
-        `
-        INSERT INTO orders (order_number, bouquet_id, actual_price, total_sum, added_date, update_date, user_id)
-        VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-        [
-          newOrderNumbers[i],
-          bouquet,
-          price.rows[0].sum === null ? 0 : parseInt(price.rows[0].sum),
-          0,
-          create_date,
-          null,
-          user.rows[0].id
-        ]
+      let itemArr: any = await db.query(
+        `select id_item from recipes where id_bouquet = $1;`,
+        [bouquets[i]]
       );
-    });
 
-    const results = await Promise.all(actions);
-    res.status(200).send(results.map((result) => result.rows[0]));
+      itemArr.rows.forEach(async (item: { id_item: any }) => {
+        await db.query(
+          `
+         INSERT INTO actions 
+         (operation_type_id, 
+           source_id, 
+           target_id, 
+           item_id, 
+           qty,     
+           price,
+           total_price, 
+           invoice_number, 
+           date, 
+           update_date, 
+           user_id --
+           )
+         VALUES 
+         ($1, +
+          $2, +
+          $3, +
+          $4, +
+          (select qty from recipes where id_bouquet = $5 and id_item = $4), 
+          (select price from items where id = $4), 
+          ((select qty from recipes where id_bouquet = $5 and id_item = $4)*(select price from items where id = $4)), 
+          $6, 
+          $7, 
+          $8, 
+          (SELECT id FROM users WHERE token = $9))
+       `,
+          [
+            3,
+            2,
+            4,
+            item.id_item,
+            bouquets[i],
+            orderNumber,
+            create_date,
+            null,
+            token
+          ]
+        );
+      });
+    }
+    res.status(200).send("successfully added");
   } catch (error) {
     res.status(500).send({ error: error.message });
   }
@@ -313,93 +301,113 @@ controller.post("/showcase_custom", async (req: Request, res: Response) => {
   }
 });
 
-controller.put("/write_off/:order_number", async (req: Request, res: Response) => {
-  try {
-    const id = req.params.order_number;
-    const token = req.get("Authorization");
-    const user_id = await db.query("SELECT id FROM users WHERE token = $1", [
-      token
-    ]);
-    if (!user_id.rows.length) {
-      return res.status(400).send({ message: "User not found" });
-    }
+controller.put(
+  "/write_off/:order_number",
+  async (req: Request, res: Response) => {
+    try {
+      const id = req.params.order_number;
+      const token = req.get("Authorization");
+      const user_id = await db.query("SELECT id FROM users WHERE token = $1", [
+        token
+      ]);
+      if (!user_id.rows.length) {
+        return res.status(400).send({ message: "User not found" });
+      }
 
-    const update_date = new Date().toISOString();
-    await db.query(
-      `UPDATE actions SET operation_type_id = 4, update_date = $1,
+      const update_date = new Date().toISOString();
+      await db.query(
+        `UPDATE actions SET operation_type_id = 4, update_date = $1,
       user_id = (SELECT id FROM users WHERE token = $2)
       WHERE
       invoice_number = $3
       `,
-      [update_date, token, id]
-    );
-    res.status(200).send({ message: "Update was successful" });
-  } catch (error) {
-    res.status(500).send({ error: error.message });
-  }
-});
-controller.put("/sendBasket/:order_number", async (req: Request, res: Response) => {
-  try {
-    const id = req.params.order_number;
-    const token = req.get("Authorization");
-    const user_id = await db.query("SELECT id FROM users WHERE token = $1", [
-      token
-    ]);
-    if (!user_id.rows.length) {
-      return res.status(400).send({ message: "User not found" });
+        [update_date, token, id]
+      );
+      res.status(200).send({ message: "Update was successful" });
+    } catch (error) {
+      res.status(500).send({ error: error.message });
     }
+  }
+);
+controller.put(
+  "/sendBasket/:order_number",
+  async (req: Request, res: Response) => {
+    try {
+      const id = req.params.order_number;
+      const token = req.get("Authorization");
+      const user_id = await db.query("SELECT id FROM users WHERE token = $1", [
+        token
+      ]);
+      if (!user_id.rows.length) {
+        return res.status(400).send({ message: "User not found" });
+      }
 
-    const update_date = new Date().toISOString();
-    await db.query(
-      `UPDATE actions SET operation_type_id = 5, update_date = $1,
+      const update_date = new Date().toISOString();
+      await db.query(
+        `UPDATE actions SET operation_type_id = 5, update_date = $1,
       user_id = (SELECT id FROM users WHERE token = $2)
       WHERE
       invoice_number = $3
       `,
-      [update_date, token, id]
-    );
-    res.status(200).send({ message: "Update was successful" });
-  } catch (error) {
-    res.status(500).send({ error: error.message });
+        [update_date, token, id]
+      );
+      res.status(200).send({ message: "Update was successful" });
+    } catch (error) {
+      res.status(500).send({ error: error.message });
+    }
   }
-});
-
+);
 
 controller.post("/", async (req: Request, res: Response) => {
   const token = req.get("Authorization");
   if (!token) return res.status(400).send("Token must be present!");
 
   try {
-    const user = await db.query("SELECT * FROM users WHERE token = $1", [token]);
-    if (!user.rows.length) return res.status(400).send({ message: "User not found" });
+    const user = await db.query("SELECT * FROM users WHERE token = $1", [
+      token
+    ]);
+    if (!user.rows.length)
+      return res.status(400).send({ message: "User not found" });
 
-    const { bouquets } = req.body as { bouquets: Array<{ bouquet: number, actual_price: number, total_price: number, payment_type: number }> };
-    if (!bouquets || !bouquets.length) return res.status(400).send({ message: "Bad request" });
+    const { bouquets } = req.body as {
+      bouquets: Array<{
+        bouquet: number;
+        actual_price: number;
+        total_price: number;
+        payment_type: number;
+      }>;
+    };
+    if (!bouquets || !bouquets.length)
+      return res.status(400).send({ message: "Bad request" });
     const orderNum = nanoid();
-    const orderPrefix = "av-"
+    const orderPrefix = "av-";
     const create_date = new Date().toISOString();
-    const totalSales = bouquets.reduce((total, bouquet) => total + bouquet.total_price, 0);
-    const lastGeneralOrder = await db.query("SELECT order_number FROM general_orders ORDER BY id DESC LIMIT 1");
+    const totalSales = bouquets.reduce(
+      (total, bouquet) => total + bouquet.total_price,
+      0
+    );
+    const lastGeneralOrder = await db.query(
+      "SELECT order_number FROM general_orders ORDER BY id DESC LIMIT 1"
+    );
     const lastOrderNumber = lastGeneralOrder.rows[0]?.order_number || "av-0000";
     const lastNumber = parseInt(lastOrderNumber.split("-")[1]);
     const nextNumber = lastNumber + 1;
-    const orderNumber = `${orderPrefix}${nextNumber.toString().padStart(4, "0")}`;
+    const orderNumber = `${orderPrefix}${nextNumber
+      .toString()
+      .padStart(4, "0")}`;
 
     const generalOrderIdResult = await db.query(
       `
       INSERT INTO general_orders (order_number, order_date, total_sales)
       VALUES ($1, $2, $3) RETURNING id`,
-      [
-        orderNumber,
-        new Date().toISOString(),
-        totalSales
-      ]
+      [orderNumber, new Date().toISOString(), totalSales]
     );
     const generalOrderId = generalOrderIdResult.rows[0].id as number;
 
     await Promise.all(
       bouquets.map(async (bouquetData) => {
-        const { bouquet, actual_price, total_price, payment_type } = bouquetData;
+        const { bouquet, actual_price, total_price, payment_type } =
+          bouquetData;
 
         const orderIdResult = await db.query(
           `
@@ -420,12 +428,15 @@ controller.post("/", async (req: Request, res: Response) => {
         const orderId = orderIdResult.rows[0].id;
 
         const bouquetRecipes = (
-          await db.query(`
+          await db.query(
+            `
           SELECT r.id, r.id_bouquet, r.id_item, r.qty, i.price
           FROM recipes r
           JOIN items i ON r.id_item = i.id
           WHERE id_bouquet = $1
-          `, [bouquet])
+          `,
+            [bouquet]
+          )
         ).rows;
 
         const actions = bouquetRecipes.map(async (recipe) => {
@@ -454,7 +465,9 @@ controller.post("/", async (req: Request, res: Response) => {
       })
     );
 
-    res.status(200).send({ message: "Orders and general order created successfully" });
+    res
+      .status(200)
+      .send({ message: "Orders and general order created successfully" });
   } catch (error) {
     res.status(500).send({ error: error.message });
   }
@@ -469,7 +482,7 @@ controller.get("/", async (req: Request, res: Response) => {
   }
 });
 
-controller.get("/basket", async (req: Request, res: Response) =>{
+controller.get("/basket", async (req: Request, res: Response) => {
   const token = req.get("Authorization");
 
   if (!token) return res.status(400).send("Token must present!");
@@ -485,7 +498,8 @@ controller.get("/basket", async (req: Request, res: Response) =>{
     if (user.rows[0].id_role !== 1 && 2)
       return res.status(403).send({ message: "Access forbidden" });
 
-    const result = (await db.query(`
+    const result = (
+      await db.query(`
     select o.bouquet_id as id, o.actual_price, o.total_sum,  
     o.added_date, b.invoice_number as order_number, i.image as image_bouquet, bt.bouquet_name as name_bouquet 
     from orders o
@@ -497,11 +511,12 @@ controller.get("/basket", async (req: Request, res: Response) =>{
       select distinct on(id_bouquet) * from bouquets_images
     ) i on i.id_bouquet = o.bouquet_id
     join bouquets bt on o.bouquet_id = bt.id
-    `)).rows;
+    `)
+    ).rows;
 
-      res.status(200).send(result);
+    res.status(200).send(result);
   } catch (error) {
-    res.status(500).send({message: error.message});
+    res.status(500).send({ message: error.message });
   }
 });
 
@@ -514,8 +529,9 @@ controller.get("/:general_order_id", async (req: Request, res: Response) => {
       INNER JOIN users u ON o.user_id = u.id
       INNER JOIN payment_type pt ON o.payment_type = pt.id
       INNER JOIN bouquets b ON o.bouquet_id = b.id
-      WHERE o.general_order_id = $1`, 
-      [general_order_id]);
+      WHERE o.general_order_id = $1`,
+      [general_order_id]
+    );
     res.status(200).send(orders.rows);
   } catch (error) {
     res.status(500).send({ error: error.message });
