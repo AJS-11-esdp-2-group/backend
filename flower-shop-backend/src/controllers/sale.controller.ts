@@ -389,7 +389,7 @@ controller.post("/", async (req: Request, res: Response) => {
     const lastGeneralOrder = await db.query(
       "SELECT order_number FROM general_orders ORDER BY id DESC LIMIT 1"
     );
-    const lastOrderNumber = lastGeneralOrder.rows[0]?.order_number || "av-0000";
+    const lastOrderNumber = lastGeneralOrder.rows[0]?.order_number || 'av-0000';
     const lastNumber = parseInt(lastOrderNumber.split("-")[1]);
     const nextNumber = lastNumber + 1;
     const orderNumber = `${orderPrefix}${nextNumber
@@ -442,8 +442,11 @@ controller.post("/", async (req: Request, res: Response) => {
         const actions = bouquetRecipes.map(async (recipe) => {
           await db.query(
             `
-            INSERT INTO actions (operation_type_id, source_id, target_id, item_id, qty, price, total_price, invoice_number, date, update_date, user_id)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            UPDATE actions 
+            SET operation_type_id = $1, source_id = $2, target_id = $3, item_id = $4, 
+                qty = $5, price = $6, total_price = $7, invoice_number = $8, 
+                date = $9, update_date = $10, user_id = $11
+            WHERE operation_type_id = 5
             `,
             [
               2,
@@ -472,6 +475,7 @@ controller.post("/", async (req: Request, res: Response) => {
     res.status(500).send({ error: error.message });
   }
 });
+
 
 controller.get("/", async (req: Request, res: Response) => {
   try {
