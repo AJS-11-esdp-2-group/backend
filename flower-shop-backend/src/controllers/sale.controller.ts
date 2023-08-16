@@ -480,7 +480,7 @@ controller.post("/", async (req: Request, res: Response) => {
 controller.get("/", async (req: Request, res: Response) => {
   try {
     const generalOrders = await db.query(
-      `SELECT go.*, u.first_name, u.last_name
+      `SELECT DISTINCT go.*, u.first_name, u.last_name
       FROM general_orders go
       JOIN orders o ON go.id = o.general_order_id
       JOIN users u ON o.user_id = u.id
