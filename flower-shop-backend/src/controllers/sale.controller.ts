@@ -369,23 +369,24 @@ controller.post("/", async (req: Request, res: Response) => {
     if (!user.rows.length)
       return res.status(400).send({ message: "User not found" });
 
-    const { bouquets } = req.body as {
+    const { bouquets, totalSales } = req.body as {
       bouquets: Array<{
         bouquet: number;
         actual_price: number;
         total_price: number;
         payment_type: number;
       }>;
+      totalSales: number
     };
     if (!bouquets || !bouquets.length)
       return res.status(400).send({ message: "Bad request" });
     const orderNum = nanoid();
     const orderPrefix = "av-";
     const create_date = new Date().toISOString();
-    const totalSales = bouquets.reduce(
-      (total, bouquet) => total + bouquet.total_price,
-      0
-    );
+    // const totalSales = bouquets.reduce(
+    //   (total, bouquet) => total + bouquet.total_price,
+    //   0
+    // );
     const lastGeneralOrder = await db.query(
       "SELECT order_number FROM general_orders ORDER BY id DESC LIMIT 1"
     );
@@ -455,7 +456,7 @@ controller.post("/", async (req: Request, res: Response) => {
               recipe.id_item,
               parseInt(recipe.qty),
               parseInt(recipe.price),
-              parseInt(recipe.qty) * parseInt(recipe.price),
+              totalSales,
               `av-${orderNum}`,
               create_date,
               null,
