@@ -395,7 +395,7 @@ controller.post("/", async (req: Request, res: Response) => {
     const nextNumber = lastNumber + 1;
     const orderNumber = `${orderPrefix}${nextNumber
       .toString()
-      .padStart(4, "0")}`;
+      .padStart(5, "0")}`;
 
     const generalOrderIdResult = await db.query(
       `
@@ -426,46 +426,23 @@ controller.post("/", async (req: Request, res: Response) => {
             user.rows[0].id
           ]
         );
-        const orderId = orderIdResult.rows[0].id;
+        const orderId = orderIdResult.rows[0].id ;
 
-        const bouquetRecipes = (
-          await db.query(
-            `
-          SELECT r.id, r.id_bouquet, r.id_item, r.qty, i.price
-          FROM recipes r
-          JOIN items i ON r.id_item = i.id
-          WHERE id_bouquet = $1
-          `,
-            [bouquet]
-          )
-        ).rows;
-
-        const actions = bouquetRecipes.map(async (recipe) => {
+        const actions = 
           await db.query(
             `
             UPDATE actions 
-            SET operation_type_id = $1, source_id = $2, target_id = $3, item_id = $4, 
-                qty = $5, price = $6, total_price = $7, invoice_number = $8, 
-                date = $9, update_date = $10, user_id = $11
-            WHERE operation_type_id = 5
+SET operation_type_id = $1, source_id = $2, target_id = $3
+WHERE operation_type_id = 5;
             `,
             [
               2,
               3,
               9,
-              recipe.id_item,
-              parseInt(recipe.qty),
-              parseInt(recipe.price),
-              totalSales,
-              `av-${orderNum}`,
-              create_date,
-              null,
-              user.rows[0].id
             ]
           );
-        });
 
-        return Promise.all([orderId, ...actions]);
+        return Promise.all([orderId, [actions]]);
       })
     );
 
