@@ -1,16 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import express, { Request, Router, Response } from 'express';
-import processFile from "../middlewares/upload";
+import processFile from '../middlewares/uploadsImageSmall';
 import { format } from "util";
 import { Storage } from "@google-cloud/storage";
 import db from '@src/db/db';
 import ItemsSchema, { Items } from '@src/models/item.model';
 import validate from '@src/middlewares/validateRequest';
-import multer from 'multer';
 import path from 'path';
 import { nanoid } from 'nanoid';
-import { uploadPath } from '../../config';
 
 const controller: Router = express.Router();
 
@@ -78,9 +76,7 @@ controller.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
-controller.post('/', async (req: Request, res: Response) => {
-  await processFile(req, res);
-  const fileOriginalName = req.file?.originalname;
+controller.post('/', processFile, async (req: Request, res: Response) => {
   try {
     const token = req.get('Authorization');
 
@@ -92,44 +88,18 @@ controller.post('/', async (req: Request, res: Response) => {
 
     if (user.id_role !== 1 && user.id_role !== 2) return res.status(403).send({ message: 'Access forbidden' });
 
-    const itemData = { ...req.body };
-
-    if (!itemData.item_name) return res.status(400).send({ message: "Name is required" })
-    if (!itemData.id_category) return res.status(400).send({ message: "Goods category is required" })
-    if (!itemData.id_subcategory) return res.status(400).send({ message: "Goods subcategory is required" })
-
     const {
       item_name,
       item_description,
       id_category,
       id_subcategory,
-      price,
     } = req.body as Items;
 
     const create_date = new Date().toISOString();
     const id_user = user.id as number;
 
-    if (!req.file) {
-      return res.status(400).send({ message: "Please upload a file!" });
-    }
-
-    const blob = bucket.file(nanoid() + path.extname(req.file.originalname));
-
-    const blobStream = blob.createWriteStream({
-      resumable: false,
-    });
-
-    const fileOriginalname = req.file.originalname;
-
-    blobStream.on("error", (err) => {
-      res.status(500).send({ message: err.message });
-    });
-
-    blobStream.on("finish", async () => {
-      const publicUrl = format(
-        `https://storage.googleapis.com/${bucket.name}/${blob.name}`
-      );
-
+    let publicUrl = ''; // Initialize with an empty string
+    const insertIntoDatabase = async() => {
       try {
         const newItem = (await db.query(
           `INSERT INTO items (
@@ -147,10 +117,10 @@ controller.post('/', async (req: Request, res: Response) => {
             item_description,
             id_category,
             id_subcategory,
-            publicUrl,
+            publicUrl, // Use the URL if available
             create_date,
             id_user,
-            price,
+            0,
           ],
         )).rows[0];
 
@@ -161,13 +131,40 @@ controller.post('/', async (req: Request, res: Response) => {
       } catch (error) {
         res.status(500).send({ error: error.message });
       }
-    });
+    }
 
-    blobStream.end(req.file.buffer);
+    if (req.file) {
+      const blob = bucket.file(nanoid() + path.extname(req.file.originalname));
+
+      const blobStream = blob.createWriteStream({
+        resumable: false,
+      });
+
+      blobStream.on("error", (err) => {
+        res.status(500).send({ message: err.message });
+      });
+
+      blobStream.on("finish", () => {
+        publicUrl = format(
+          `https://storage.googleapis.com/${bucket.name}/${blob.name}`
+        );
+
+        // Insert the item into the database with or without the image URL
+        insertIntoDatabase();
+      });
+
+      blobStream.end(req.file.buffer);
+    } else {
+      // No file provided, insert the item into the database without image URL
+      insertIntoDatabase();
+    }
+
   } catch (error) {
     res.status(500).send({ error: error.message });
   }
 });
+
+
 
 controller.put(
   '/:id',
