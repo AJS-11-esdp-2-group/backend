@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import express, { Request, Router, Response } from 'express';
 import processFile from '../middlewares/uploadsImageSmall';
 import { format } from "util";
@@ -98,8 +96,8 @@ controller.post('/', processFile, async (req: Request, res: Response) => {
     const create_date = new Date().toISOString();
     const id_user = user.id as number;
 
-    let publicUrl = ''; // Initialize with an empty string
-    const insertIntoDatabase = async() => {
+    let publicUrl = '';
+    const insertIntoDatabase = async () => {
       try {
         const newItem = (await db.query(
           `INSERT INTO items (
@@ -117,7 +115,7 @@ controller.post('/', processFile, async (req: Request, res: Response) => {
             item_description,
             id_category,
             id_subcategory,
-            publicUrl, // Use the URL if available
+            publicUrl,
             create_date,
             id_user,
             0,
@@ -148,14 +146,11 @@ controller.post('/', processFile, async (req: Request, res: Response) => {
         publicUrl = format(
           `https://storage.googleapis.com/${bucket.name}/${blob.name}`
         );
-
-        // Insert the item into the database with or without the image URL
         insertIntoDatabase();
       });
 
       blobStream.end(req.file.buffer);
     } else {
-      // No file provided, insert the item into the database without image URL
       insertIntoDatabase();
     }
 
