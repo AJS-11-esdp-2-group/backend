@@ -495,7 +495,7 @@ controller.get("/basket", async (req: Request, res: Response) => {
       select distinct invoice_number from actions
       where operation_type_id = 5
     ) b ON b.invoice_number = o.order_number
-    join (
+    left join (
       select distinct on(id_bouquet) * from bouquets_images
     ) i on i.id_bouquet = o.bouquet_id
     join bouquets bt on o.bouquet_id = bt.id
