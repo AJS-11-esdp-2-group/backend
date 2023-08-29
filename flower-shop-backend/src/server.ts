@@ -14,7 +14,6 @@ import recipesController from "@src/controllers/recipes.controller";
 import bouquetsImageController from "./controllers/bouquetsImage.controller";
 import itemsPricesControllers from '@src/controllers/itemsPrices.controller';
 import saleControllers from '@src/controllers/sale.controller';
-import soldControllers from '@src/controllers/sold.controller';
 
 const run = async () => {
   app.listen(PORT, () => {
@@ -42,6 +41,5 @@ app.use("/recipes", recipesController);
 app.use("/bouquets_images", bouquetsImageController);
 app.use("/items_prices", itemsPricesControllers);
 app.use("/sales", saleControllers);
-app.use("/sold", soldControllers);
 
 run().catch(logger.err);

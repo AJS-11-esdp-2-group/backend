@@ -78,8 +78,8 @@ controller.put(
             email = $2,
             phone = $3,
             address = $4,
-            comment = $5,
-            WHERE id= $8
+            comment = $5
+            WHERE id= $6
             RETURNING *`,
         [
           name_supplier,
