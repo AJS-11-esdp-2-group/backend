@@ -39,6 +39,7 @@
     "@types/cors": "^2.8.13",
     "@types/multer": "^1.4.7",
     "@types/nanoid": "^3.0.0",
+    "@vercel/blob": "^0.9.2",
     "bcrypt": "^5.1.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",

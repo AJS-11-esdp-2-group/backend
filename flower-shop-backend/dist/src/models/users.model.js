@@ -10,8 +10,6 @@ const UserSchema = (0, yup_1.object)({
     first_name: (0, yup_1.string)().required('Name is required'),
     last_name: (0, yup_1.string)().required('Lastname is required'),
     address: (0, yup_1.string)().required('Address is required').max(55),
-    country: (0, yup_1.number)().required(),
-    city: (0, yup_1.number)(),
     createdOn: (0, yup_1.date)().default(() => new Date())
 });
 exports.default = UserSchema;

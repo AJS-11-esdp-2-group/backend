@@ -110,12 +110,6 @@ controller.delete("/:id", (req, res) => __awaiter(void 0, void 0, void 0, functi
                 .status(400)
                 .send({ message: "Subcategories are not in the database" });
         }
-        const dependent_subcategory = yield db_1.default.query("select*from items_under_subcategories WHERE id_subcategories = $1", [id]);
-        if (dependent_subcategory.rows.length) {
-            return res.status(400).send({
-                message: "Subcategories have associated records in the table items_under_subcategories"
-            });
-        }
         const deletedSubcategory = yield db_1.default.query(`
         DELETE FROM items_subcategories
         WHERE id = $1

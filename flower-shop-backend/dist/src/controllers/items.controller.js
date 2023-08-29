@@ -12,26 +12,21 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 const express_1 = __importDefault(require("express"));
+const uploadsImageSmall_1 = __importDefault(require("../middlewares/uploadsImageSmall"));
+const util_1 = require("util");
+const storage_1 = require("@google-cloud/storage");
 const db_1 = __importDefault(require("../db/db"));
-const item_model_1 = __importDefault(require("../models/item.model"));
+const item_model_1 = __importDefault(require("@src/models/item.model"));
 const validateRequest_1 = __importDefault(require("../middlewares/validateRequest"));
-const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
 const nanoid_1 = require("nanoid");
-const config_1 = require("../../config");
 const controller = express_1.default.Router();
-const storage = multer_1.default.diskStorage({
-    destination: (req, file, cd) => {
-        cd(null, config_1.uploadPath);
-    },
-    filename(req, file, cd) {
-        cd(null, (0, nanoid_1.nanoid)() + path_1.default.extname(file.originalname));
-    },
+const storage = new storage_1.Storage({
+    projectId: "rugged-night-391816",
+    credentials: require('../../google-cloud-key.json')
 });
-const upload = (0, multer_1.default)({ storage });
+const bucket = storage.bucket("flower_shop_1");
 controller.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const item = yield db_1.default.query(`
@@ -42,10 +37,18 @@ controller.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     s.item_description,
     s.image_small,
     s.create_date,
-    u.username
+    u.username,
+	s.id_category,
+  s.id_subcategory,
+  (COALESCE((select sum(qty) from actions where operation_type_id = 1 and item_id = s.id),0,
+			(select sum(qty) from actions where operation_type_id = 1 and item_id = s.id)) -
+  COALESCE (((select sum(qty) from actions where operation_type_id not in(1,4) and item_id =s.id)),0,
+   			(select sum(qty) from actions where operation_type_id not in(1,4) and item_id =s.id))) as "available_qty"
 FROM
     items s
-    INNER JOIN users u ON u.id = s.id_user`);
+    INNER JOIN items_categories c ON s.id_category = c.id
+    INNER JOIN users u ON u.id = s.id_user
+`);
         res.status(200).send(item.rows);
     }
     catch (error) {
@@ -63,7 +66,6 @@ controller.get('/:id', (req, res) => __awaiter(void 0, void 0, void 0, function*
         s.item_description,
         s.id_category,
         s.id_subcategory,
-        s.id_under_subcategory,
         s.image_small,
         s.create_date,
         s.id_user,
@@ -71,7 +73,6 @@ controller.get('/:id', (req, res) => __awaiter(void 0, void 0, void 0, function*
         FROM items s
         INNER JOIN items_categories ic ON ic.id = s.id_category
         INNER JOIN items_subcategories isc ON isc.id = s.id_subcategory
-        INNER JOIN items_under_subcategories iusc ON iusc.id = s.id_under_subcategory
         INNER JOIN users u ON u.id = s.id_user
         WHERE s.id = $1`, [id]);
         if (item.rows.length === 0) {
@@ -85,52 +86,71 @@ controller.get('/:id', (req, res) => __awaiter(void 0, void 0, void 0, function*
         res.status(500).send({ error: error.message });
     }
 }));
-controller.post('/', (0, validateRequest_1.default)(item_model_1.default), upload.single('image'), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+controller.post('/', uploadsImageSmall_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const token = req.get('Authorization');
-        const user = yield db_1.default.query('SELECT id FROM users WHERE token = $1', [token]);
-        if (user.rows.length === 0) {
-            return res.status(401).send({ error: 'Unauthorized' });
-        }
-        const { item_name, item_description, id_category, id_subcategory, id_under_subcategory, price, } = req.body;
+        if (!token)
+            res.status(400).send({ message: "Token must be present" });
+        const user = (yield db_1.default.query('SELECT * FROM users WHERE token = $1', [token])).rows[0];
+        if (user.id_role !== 1 && user.id_role !== 2)
+            return res.status(403).send({ message: 'Access forbidden' });
+        const { item_name, item_description, id_category, id_subcategory, } = req.body;
         const create_date = new Date().toISOString();
-        let image_small = 'img.jpeg';
-        if (req.file) {
-            image_small = req.file.path;
-        }
-        const id_user = user.rows[0].id;
-        const newItem = yield db_1.default.query(`INSERT INTO items (
-      item_name,
-      item_description,
-      id_category,
-      id_subcategory,
-      id_under_subcategory,
-      image_small,
-      create_date,
-      id_user,
-      price
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, COALESCE($8, 0), $9) RETURNING *`, [
+        const id_user = user.id;
+        let publicUrl = '';
+        const insertIntoDatabase = () => __awaiter(void 0, void 0, void 0, function* () {
+            try {
+                const newItem = (yield db_1.default.query(`INSERT INTO items (
             item_name,
             item_description,
             id_category,
             id_subcategory,
-            id_under_subcategory,
             image_small,
             create_date,
             id_user,
-            price,
-        ]);
-        const createdItem = newItem.rows[0];
-        res.status(200).send({
-            message: 'Item created successfully',
-            item: createdItem,
+            price
+          ) VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, 0), $8) RETURNING *`, [
+                    item_name,
+                    item_description,
+                    id_category,
+                    id_subcategory,
+                    publicUrl,
+                    create_date,
+                    id_user,
+                    0,
+                ])).rows[0];
+                res.status(200).send({
+                    message: 'Item created successfully',
+                    item: newItem,
+                });
+            }
+            catch (error) {
+                res.status(500).send({ error: error.message });
+            }
         });
+        if (req.file) {
+            const blob = bucket.file((0, nanoid_1.nanoid)() + path_1.default.extname(req.file.originalname));
+            const blobStream = blob.createWriteStream({
+                resumable: false,
+            });
+            blobStream.on("error", (err) => {
+                res.status(500).send({ message: err.message });
+            });
+            blobStream.on("finish", () => {
+                publicUrl = (0, util_1.format)(`https://storage.googleapis.com/${bucket.name}/${blob.name}`);
+                insertIntoDatabase();
+            });
+            blobStream.end(req.file.buffer);
+        }
+        else {
+            insertIntoDatabase();
+        }
     }
     catch (error) {
         res.status(500).send({ error: error.message });
     }
 }));
-controller.put('/:id', (0, validateRequest_1.default)(item_model_1.default), upload.single('image'), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+controller.put('/:id', (0, validateRequest_1.default)(item_model_1.default), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const token = req.get('Authorization');
         const user = yield db_1.default.query('SELECT id FROM users WHERE token = $1', [
@@ -139,7 +159,7 @@ controller.put('/:id', (0, validateRequest_1.default)(item_model_1.default), upl
         if (user.rows.length === 0) {
             return res.status(401).send({ error: 'Unauthorized' });
         }
-        const { item_name, item_description, id_category, id_subcategory, id_under_subcategory, price, } = req.body;
+        const { item_name, item_description, id_category, id_subcategory, price, } = req.body;
         const id = req.params.id;
         let image_small = 'img.jpeg';
         if (req.file) {
@@ -152,17 +172,15 @@ controller.put('/:id', (0, validateRequest_1.default)(item_model_1.default), upl
             item_description = $2,
             id_category = $3,
             id_subcategory = $4,
-            id_under_subcategory = $5,
-            image_small = $6,
-            id_user = $7,
-            price = COALESCE($8, 0)
-          WHERE id = $9
+            image_small = $5,
+            id_user = $6,
+            price = COALESCE($7, 0)
+          WHERE id = $8
           RETURNING *`, [
             item_name,
             item_description,
             id_category,
             id_subcategory,
-            id_under_subcategory,
             image_small,
             id_user,
             price,

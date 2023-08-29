@@ -12,9 +12,7 @@ const suppliersStorages_controller_1 = __importDefault(require("./controllers/su
 const storages_controller_1 = __importDefault(require("./controllers/storages.controller"));
 const ItemsCategory_controller_1 = __importDefault(require("./controllers/ItemsCategory.controller"));
 const ItemsSubcategory_controller_1 = __importDefault(require("./controllers/ItemsSubcategory.controller"));
-const location_controller_1 = __importDefault(require("./controllers/location.controller"));
 const bouquets_controller_1 = __importDefault(require("./controllers/bouquets.controller"));
-const itemsUnderSubcategories_controllers_1 = __importDefault(require("./controllers/itemsUnderSubcategories.controllers"));
 const recipes_controller_1 = __importDefault(require("./controllers/recipes.controller"));
 const bouquetsImage_controller_1 = __importDefault(require("./controllers/bouquetsImage.controller"));
 const itemsPrices_controller_1 = __importDefault(require("./controllers/itemsPrices.controller"));
@@ -37,8 +35,6 @@ app.use("/suppliers_controllers", suppliersStorages_controller_1.default);
 app.use("/storages", storages_controller_1.default);
 app.use("/items_category", ItemsCategory_controller_1.default);
 app.use("/items_subcategory", ItemsSubcategory_controller_1.default);
-app.use("/items_under_subcategory", itemsUnderSubcategories_controllers_1.default);
-app.use("/location", location_controller_1.default);
 app.use("/bouquets", bouquets_controller_1.default);
 app.use("/recipes", recipes_controller_1.default);
 app.use("/bouquets_images", bouquetsImage_controller_1.default);

@@ -24,7 +24,6 @@ controller.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         c.id,
         b.bouquet_name,
         i.item_name,
-        i.image_large,
         c.qty
       FROM
         recipes c
@@ -44,7 +43,6 @@ controller.get('/:id', (req, res) => __awaiter(void 0, void 0, void 0, function*
           c.id,
           c.id_bouquet,
           i.item_name,
-          i.image_large,
           c.qty
         FROM
           recipes c
@@ -70,7 +68,6 @@ controller.post('/', (0, validateRequest_1.default)(recipe_models_1.default), (r
           c.id,
           c.id_bouquet,
           i.item_name,
-          i.image_large,
           c.qty
         FROM
         recipes c
@@ -103,7 +100,6 @@ controller.put('/:id', (0, validateRequest_1.default)(recipe_models_1.default), 
           c.id,
           c.id_bouquet,
           i.item_name,
-          i.image_large,
           c.qty
         FROM
         recipes c

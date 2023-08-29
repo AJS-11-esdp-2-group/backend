@@ -19,6 +19,8 @@ const storage_1 = require("@google-cloud/storage");
 const db_1 = __importDefault(require("../db/db"));
 const config_1 = require("../../config");
 const fs_1 = __importDefault(require("fs"));
+const nanoid_1 = require("nanoid");
+const path_1 = __importDefault(require("path"));
 const controller = express_1.default.Router();
 const storage = new storage_1.Storage({
     projectId: "rugged-night-391816",
@@ -36,48 +38,45 @@ controller.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         res.status(500).send({ error: error.message });
     }
 }));
-controller.post("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
-    yield (0, upload_1.default)(req, res);
-    const fileOriginalName = (_a = req.file) === null || _a === void 0 ? void 0 : _a.originalname;
+controller.post("/", upload_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const imageData = Object.assign({}, req.body);
     try {
-        const imageData = Object.assign({}, req.body);
         if (!imageData.id_bouquet)
             return res.status(400).send({ message: 'Id of bouquet is required' });
-        if (!req.file) {
-            return res.status(400).send({ message: "Please upload a file!" });
-        }
-        const blob = bucket.file(req.file.originalname);
-        const blobStream = blob.createWriteStream({
-            resumable: false,
-        });
-        const fileOriginalname = req.file.originalname;
-        blobStream.on("error", (err) => {
-            res.status(500).send({ message: err.message });
-        });
-        blobStream.on("finish", () => __awaiter(void 0, void 0, void 0, function* () {
-            const publicUrl = (0, util_1.format)(`https://storage.googleapis.com/${bucket.name}/${blob.name}`);
+        let publicUrl = '';
+        const insertIntoDatabase = () => __awaiter(void 0, void 0, void 0, function* () {
             try {
                 const bouquetImage = yield db_1.default.query(`
                 INSERT INTO bouquets_images (id_bouquet, image) 
                 VALUES ($1, $2)
                 RETURNING *
-            `, [parseInt(imageData.id_bouquet), publicUrl]);
+            `, [imageData.id_bouquet, publicUrl]);
+                res.sendStatus(200);
             }
             catch (error) {
                 res.status(500).send({ error: error.message });
             }
-            res.status(200).send({
-                message: "Uploaded the file successfully: " + fileOriginalname,
-                url: publicUrl,
-            });
-        }));
-        blobStream.end(req.file.buffer);
-    }
-    catch (err) {
-        res.status(500).send({
-            message: `Could not upload the file: ${fileOriginalName}. ${err}`,
         });
+        if (req.file) {
+            const blob = bucket.file((0, nanoid_1.nanoid)() + path_1.default.extname(req.file.originalname));
+            const blobStream = blob.createWriteStream({
+                resumable: false,
+            });
+            blobStream.on("error", (err) => {
+                res.status(500).send({ message: err.message });
+            });
+            blobStream.on("finish", () => {
+                publicUrl = (0, util_1.format)(`https://storage.googleapis.com/${bucket.name}/${blob.name}`);
+                insertIntoDatabase();
+            });
+            blobStream.end(req.file.buffer);
+        }
+        else {
+            insertIntoDatabase();
+        }
+    }
+    catch (error) {
+        res.status(500).send({ error: error.message });
     }
 }));
 controller.get('/:id', (req, res) => __awaiter(void 0, void 0, void 0, function* () {

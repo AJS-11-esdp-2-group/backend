@@ -12,28 +12,25 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = __importDefault(require("express"));
 const db_1 = __importDefault(require("../db/db"));
-const controller = express_1.default.Router();
-controller.get("/country", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const country = yield db_1.default.query(`SELECT * FROM countries;`);
-        res.status(200).send(country.rows);
-    }
-    catch (error) {
-        res.status(500).send({ error: error.message });
-    }
-}));
-controller.get("/cities", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const cities = yield db_1.default.query(`SELECT name_city, countries.name_country FROM cities JOIN countries ON cities.id_country = countries.id;`);
-        if (cities.rows.length === 0) {
-            return res.status(404).send({ error: 'Cities not found' });
+const nextOrderNumbers = (amount) => __awaiter(void 0, void 0, void 0, function* () {
+    const lastOrderNumbers = (yield db_1.default.query(`select id, order_number from orders order by id DESC limit 50`)).rows;
+    if (!lastOrderNumbers.length) {
+        let numbers = [];
+        for (let i = 1; i <= amount; i++) {
+            numbers.push('av-' + i.toString().padStart(4, '0'));
         }
-        res.status(200).send(cities.rows);
+        return numbers;
     }
-    catch (error) {
-        res.status(500).send({ error: error.message });
+    ;
+    const orderNumbers = lastOrderNumbers.map(order => {
+        return parseInt(order.order_number.slice(3));
+    });
+    const maxNumber = Math.max(...orderNumbers);
+    let numbers = [];
+    for (let i = 1; i <= amount; i++) {
+        numbers.push('av-' + (i + maxNumber).toString().padStart(4, '0'));
     }
-}));
-exports.default = controller;
+    return numbers;
+});
+exports.default = nextOrderNumbers;

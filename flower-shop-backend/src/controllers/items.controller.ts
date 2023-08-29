@@ -2,15 +2,18 @@ import express, { Request, Router, Response } from 'express';
 import processFile from '../middlewares/uploadsImageSmall';
 import { format } from "util";
 import { Storage } from "@google-cloud/storage";
-import db from '@src/db/db';
+import db from '../db/db';
 import ItemsSchema, { Items } from '@src/models/item.model';
-import validate from '@src/middlewares/validateRequest';
+import validate from '../middlewares/validateRequest';
 import path from 'path';
 import { nanoid } from 'nanoid';
 
 const controller: Router = express.Router();
 
-const storage = new Storage({ keyFilename: "google-cloud-key.json" });
+const storage = new Storage({
+  projectId: "rugged-night-391816",
+  credentials: require('../../google-cloud-key.json')
+});
 const bucket = storage.bucket("flower_shop_1");
 
 controller.get('/', async (req: Request, res: Response) => {

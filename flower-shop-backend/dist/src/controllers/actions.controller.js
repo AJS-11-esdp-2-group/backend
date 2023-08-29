@@ -259,18 +259,21 @@ controller.delete("/:id", (req, res) => __awaiter(void 0, void 0, void 0, functi
 controller.get('/invoices', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const invoiceNumbers = yield db_1.default.query(`select
-      invoice_number as id,
+      a.invoice_number as id,
       COUNT(*) AS total_items,
-      suppliers.name_supplier AS supplier_name,
+      sss.name_supplier AS supplier_name,
       s.storage AS storage_name,
-      SUM(total_price) AS total_sum,
-      MAX(date) AS date
-    from actions
-    left join storages ss ON actions.target_id = ss.id
-     left join suppliers ON actions.source_id = suppliers.id
-    left JOIN storages s ON actions.target_id= s.id
-    group by invoice_number, suppliers.name_supplier, s.storage
-    order by id`);
+      SUM(a.total_price) AS total_sum,
+      MAX(a.date) AS date,
+	    u.username
+      from actions a
+      left join storages ss ON a.target_id = ss.id
+      left join suppliers sss ON a.source_id = sss.id
+      left JOIN storages s ON a.target_id= s.id
+	    left join users u on u.id = a.user_id
+	    where a.operation_type_id = 1
+	    group by a.invoice_number, sss.name_supplier, s.storage, u.username, a.date
+      order by a.date desc`);
         res.status(200).send(invoiceNumbers.rows);
     }
     catch (error) {

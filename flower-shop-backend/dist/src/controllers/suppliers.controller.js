@@ -22,16 +22,11 @@ controller.get("/", (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         const suppliers = yield db_1.default.query(`select
       s.id,
       s.name_supplier,
-      s.contact_person,
       s.email,
       s.phone,
       s.address,
-      c.name_country,
-      ci.name_city,
-      s.create_date
+      s.comment
       from suppliers s
-      inner join countries c on c.id = s.id_country
-      inner join cities ci on ci.id = s.id_city 
 order by s.name_supplier`);
         res.status(200).send(suppliers.rows);
     }
@@ -45,16 +40,11 @@ controller.get("/:id", (req, res) => __awaiter(void 0, void 0, void 0, function*
         const supplier = yield db_1.default.query(`select
       s.id,
       s.name_supplier,
-      s.contact_person,
       s.email,
       s.phone,
       s.address,
-      c.name_country,
-      ci.name_city,
-      s.create_date
+      s.comment
       from suppliers s
-      inner join countries c on c.id = s.id_country
-      inner join cities ci on ci.id = s.id_city
       WHERE s.id = $1`, [id]);
         if (!supplier.rows.length) {
             return res.status(404).send({ error: "Supplier not found" });
@@ -68,7 +58,7 @@ controller.get("/:id", (req, res) => __awaiter(void 0, void 0, void 0, function*
 controller.put("/:id", (0, validateRequest_1.default)(supplier_model_1.default), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const id = req.params.id;
-        const { name_supplier, contact_person, email, phone, address, id_country, id_city } = req.body;
+        const { name_supplier, email, phone, address, comment } = req.body;
         const supplier = yield db_1.default.query("SELECT * FROM suppliers WHERE id = $1", [
             id
         ]);
@@ -77,36 +67,27 @@ controller.put("/:id", (0, validateRequest_1.default)(supplier_model_1.default),
         }
         const updatedSupplier = yield db_1.default.query(`UPDATE suppliers SET
             name_supplier = $1,
-            contact_person = $2,
-            email = $3,
-            phone = $4,
-            address = $5,
-            id_country = $6,
-            id_city = $7
-            WHERE id= $8
+            email = $2,
+            phone = $3,
+            address = $4,
+            comment = $5
+            WHERE id= $6
             RETURNING *`, [
             name_supplier,
-            contact_person,
             email,
             phone,
             address,
-            id_country,
-            id_city,
+            comment,
             id
         ]);
         const selectedSupplier = yield db_1.default.query(`select
         s.id,
         s.name_supplier,
-        s.contact_person,
         s.email,
         s.phone,
         s.address,
-        c.name_country,
-        ci.name_city,
-        s.create_date
+        s.comment
         from suppliers s
-        inner join countries c on c.id = s.id_country
-        inner join cities ci on ci.id = s.id_city
         WHERE s.id = $1`, [id]);
         res.status(200).send(selectedSupplier.rows);
     }
@@ -116,34 +97,26 @@ controller.put("/:id", (0, validateRequest_1.default)(supplier_model_1.default),
 }));
 controller.post("/", (0, validateRequest_1.default)(supplier_model_1.default), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { name_supplier, contact_person, email, phone, address, id_country, id_city } = req.body;
+        const { name_supplier, email, phone, address, comment } = req.body;
         const create_date = new Date().toISOString();
         const newSupplier = yield db_1.default.query(`INSERT INTO suppliers as s
-            (name_supplier, contact_person, email, phone, address, id_country, id_city, create_date)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            (name_supplier, email, phone, address, comment)
+            VALUES ($1, $2, $3, $4, $5)
             RETURNING id`, [
             name_supplier,
-            contact_person,
             email,
             phone,
             address,
-            id_country,
-            id_city,
-            create_date
+            comment
         ]);
         const supplier = yield db_1.default.query(`select
         s.id,
         s.name_supplier,
-        s.contact_person,
         s.email,
         s.phone,
         s.address,
-        c.name_country,
-        ci.name_city,
-        s.create_date
+        s.comment
         from suppliers s
-        inner join countries c on c.id = s.id_country
-        inner join cities ci on ci.id = s.id_city
         WHERE s.id = $1`, [newSupplier.rows[0].id]);
         res.status(200).send(supplier.rows);
     }
