@@ -3,7 +3,7 @@ import processFile from '../middlewares/uploadsImageSmall';
 import { format } from "util";
 import { Storage } from "@google-cloud/storage";
 import db from '../db/db';
-import ItemsSchema, { Items } from '@src/models/item.model';
+import ItemsSchema, { Items } from '../models/item.model';
 import validate from '../middlewares/validateRequest';
 import path from 'path';
 import { nanoid } from 'nanoid';
