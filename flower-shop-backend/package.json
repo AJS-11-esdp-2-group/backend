@@ -1,22 +1,21 @@
 {
   "name": "flower-shop-backend",
-  "version": "0.0.0",
+  "version": "1.0.0",
+	"description": "",
+	"main": "server.js",
   "scripts": {
-    "build": "npx ts-node build.ts",
-    "lint": "npx eslint --ext .ts src/",
-    "lint:tests": "npx eslint --ext .ts spec/",
-    "start": "node -r module-alias/register ./dist --env=production",
-    "dev": "nodemon",
-    "test": "nodemon --config ./spec/nodemon.json",
-    "test:no-reloading": "npx ts-node --files -r tsconfig-paths/register ./spec"
+    "start": "nodemon src/server.ts",
+		"build": "rimraf dist && tsc",
+		"ts.check": "tsc --project tsconfig.json",
+		"add-build": "git add dist",
+		"test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [
-    "nodejs",
-    "upload",
-    "file",
-    "google cloud storage",
-    "rest api"
-  ],
+  "pre-commit": [
+		"ts.check",
+		"build",
+		"add-build"
+	],
+  "keywords": [],
   "author": "flower_shop",
   "license": "ISC",
   "nodemonConfig": {

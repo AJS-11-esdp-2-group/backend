@@ -1,7 +1,7 @@
 import express, { Request, Router, Response } from "express";
-import db from "@src/db/db";
-import SupplierSchema, { Supplier } from "@src/models/supplier.model";
-import validate from "@src/middlewares/validateRequest";
+import db from "../db/db";
+import SupplierSchema, { Supplier } from "../models/supplier.model";
+import validate from "../middlewares/validateRequest";
 
 const controller: Router = express.Router();
 

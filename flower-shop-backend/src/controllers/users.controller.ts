@@ -1,7 +1,7 @@
 import express, { Request, Router, Response } from "express";
-import db from "@src/db/db";
-import UserSchema, { Users } from "@src/models/users.model";
-import validate from "@src/middlewares/validateRequest";
+import db from "../db/db";
+import UserSchema, { Users } from "../models/users.model";
+import validate from "../middlewares/validateRequest";
 import { nanoid } from "nanoid";
 
 const controller: Router = express.Router();

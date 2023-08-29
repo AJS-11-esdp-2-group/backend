@@ -1,7 +1,7 @@
 import express, { Request, Router, Response } from "express";
-import db from "@src/db/db";
-import SubcategorySchema, { Subcategory } from "@src/models/subcategory.models";
-import validate from "@src/middlewares/validateRequest";
+import db from "../db/db";
+import SubcategorySchema, { Subcategory } from "../models/subcategory.models";
+import validate from "../middlewares/validateRequest";
 
 const controller: Router = express.Router();
 controller.get("/", async (req: Request, res: Response) => {

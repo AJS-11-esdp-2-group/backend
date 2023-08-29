@@ -1,8 +1,8 @@
 import express, { Request, Router, Response } from 'express';
-import db from '@src/db/db';
+import db from '../db/db';
 import RecipeSchema,
-{ Recipe } from '@src/models/recipe.models';
-import validate from '@src/middlewares/validateRequest';
+{ Recipe } from '../models/recipe.models';
+import validate from '../middlewares/validateRequest';
 
 const controller: Router = express.Router();
 
