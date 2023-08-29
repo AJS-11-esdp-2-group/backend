@@ -1,37 +1,32 @@
 import cors from "cors";
-import express, {Request, Response} from "express";
+import express from "express";
 import logger from "jet-logger";
-import itemController from "./controllers/items.controller";
-import suppliersController from "./controllers/suppliers.controller";
-import usersController from "./controllers/users.controller";
-import actionsController from "./controllers/actions.controller";
-import suppliersStoragesController from './controllers/suppliersStorages.controller'
-import storagesController from './controllers/storages.controller'
-import itemsCategoryController from "./controllers/ItemsCategory.controller";
-import itemsSubcategoryController from "./controllers/ItemsSubcategory.controller";
-import locationController from "./controllers/location.controller";
-import bouquetController from "./controllers/bouquets.controller";
-import itemsUnderCategoryController from "./controllers/itemsUnderSubcategories.controllers"
-import recipesController from "./controllers/recipes.controller";
+import itemController from "@src/controllers/items.controller";
+import suppliersController from "@src/controllers/suppliers.controller";
+import usersController from "@src/controllers/users.controller";
+import actionsController from "@src/controllers/actions.controller";
+import suppliersStoragesController from '@src/controllers/suppliersStorages.controller'
+import storagesController from '@src/controllers/storages.controller'
+import itemsCategoryController from "@src/controllers/ItemsCategory.controller";
+import itemsSubcategoryController from "@src/controllers/ItemsSubcategory.controller";
+import bouquetController from "@src/controllers/bouquets.controller";
+import recipesController from "@src/controllers/recipes.controller";
 import bouquetsImageController from "./controllers/bouquetsImage.controller";
-import itemsPricesControllers from './controllers/itemsPrices.controller';
-import saleControllers from './controllers/sale.controller'
+import itemsPricesControllers from '@src/controllers/itemsPrices.controller';
+import saleControllers from '@src/controllers/sale.controller';
 
-const app = express()
-const port = process.env.PORT || 8080
+const run = async () => {
+  app.listen(PORT, () => {
+    logger.info(`Server is running on http://localhost:${PORT}`);
+  });
+};
 
+const app = express();
+const PORT = 8000;
 
 app.use(express.json());
 app.use(express.static("public"));
-
-
-app.get('/', (_req: Request, res: Response) => {
-	return res.send('Express Typescript on Vercel 8')
-})
-
-app.get('/ping', (_req: Request, res: Response) => {
-	return res.send('pong 🏓')
-})
+app.use(cors());
 
 app.use("/items", itemController);
 app.use("/suppliers", suppliersController);
@@ -41,14 +36,10 @@ app.use("/suppliers_controllers", suppliersStoragesController);
 app.use("/storages", storagesController);
 app.use("/items_category", itemsCategoryController);
 app.use("/items_subcategory", itemsSubcategoryController);
-app.use("/items_under_subcategory", itemsUnderCategoryController);
-app.use("/location", locationController);
 app.use("/bouquets", bouquetController);
 app.use("/recipes", recipesController);
 app.use("/bouquets_images", bouquetsImageController);
 app.use("/items_prices", itemsPricesControllers);
 app.use("/sales", saleControllers);
 
-app.listen(port, () => {
-	return console.log(`Server is listening on ${port}`)
-});
+run().catch(logger.err);
