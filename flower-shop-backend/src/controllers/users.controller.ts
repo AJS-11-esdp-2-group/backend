@@ -19,8 +19,6 @@ controller.post(
         first_name,
         last_name,
         address,
-        country,
-        city
       } = req.body as Users;
 
       const user = await db.query("SELECT * FROM users WHERE username = $1", [
@@ -33,8 +31,8 @@ controller.post(
       if (user.rows.length > 0 && mail.rows.length > 0) {
         return res.status(400).send({
           errors: {
-            username: "User allready exist!",
-            email: "E-mail allready taken"
+            username: "User already exist!",
+            email: "E-mail already taken"
           }
         });
       }
@@ -51,8 +49,8 @@ controller.post(
 
       const newUser = await db.query(
         `INSERT INTO users
-            (username, password, email, email_verificated, phone, first_name, last_name, address, id_country, id_city, create_date)
-            VALUES ($1, crypt($2, gen_salt('bf')), $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            (username, password, email, email_verificated, phone, first_name, last_name, address, create_date)
+            VALUES ($1, crypt($2, gen_salt('bf')), $3, $4, $5, $6, $7, $8, $9)
             RETURNING username, email, phone, first_name, last_name, address, create_date`,
         [
           username,
@@ -63,8 +61,6 @@ controller.post(
           first_name,
           last_name,
           address,
-          country,
-          city,
           date
         ]
       );
@@ -117,14 +113,10 @@ controller.post("/login", async (req: Request, res: Response) => {
             u.first_name,
             u.last_name,
             u.address,
-            coun.name_country as country,
-            cty.name_city as city,
             u.create_date,
             u.last_update_date
             from users u
             left join user_roles r on r.id = u.id_role
-            left join countries coun on coun.id = u.id_country
-            left join cities cty on cty.id = u.id_city
             where u.username = $1`,
       [username]
     );

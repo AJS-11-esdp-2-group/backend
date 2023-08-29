@@ -8,25 +8,20 @@ const controller: Router = express.Router();
 controller.get('/', async (req: Request, res: Response) => {
     try {
         const bouquets = await db.query(`
-          select distinct on(b.id) 
-          b.id, b.bouquet_name, b.bouquet_description, i.image, b.author, sum(qty*price) 
-          from bouquets b 
-          left join (
-            SELECT  r.id, r.id_bouquet, r.id_item, r.qty, ipf.price
-            FROM recipes r
-            LEFT JOIN (
-              select item, date,ip.price FROM(
-              SELECT item_id as item, max(added_date) as date
-              from items_prices
-              group by item_id
-              ) as fg
-              join items_prices ip on fg.date = ip.added_date
-            ) as ipf on r.id_item = ipf.item
-          ) r on r.id_bouquet = b.id
-          LEFT OUTER JOIN bouquets_images i ON b.id = i.id_bouquet
-          group by b.id, b.bouquet_name, b.bouquet_description, b.author, i.image
+        select
+        b.id,
+        b.bouquet_name,
+        b.bouquet_description,
+        bi.image,
+        b.author,
+    		sum(i.price * r.qty)
+        from bouquets b
+		    inner join recipes r on r.id_bouquet = b.id
+		    inner join items i on i.id = r.id_item
+        left join bouquets_images bi on bi.id_bouquet = b.id
+        where b.id_category = 4 
+		    group by b.id,b.bouquet_name,b.bouquet_description,bi.image, b.author
         `);
-        
         res.status(200).send(bouquets.rows);
     } catch (error) {
         res.status(500).send({ error: error.message });
